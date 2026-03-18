@@ -175,7 +175,7 @@
         --grid-col-line-color: rgba(255, 255, 255, 0.16);
         --grid-col-line-thickness: 2px;
         display: grid;
-        grid-template-columns: repeat(var(--grid-cols), minmax(40px, 1fr));
+        grid-template-columns: repeat(var(--grid-cols), 1fr);
         grid-auto-rows: var(--grid-row-size);
         row-gap: var(--grid-row-gap);
         column-gap: var(--grid-col-gap);
@@ -271,7 +271,7 @@
         border-radius: 6px;
         background-color: rgba(240, 240, 240, 0.08);
         border: 5px solid transparent;
-        font-size: 24px;
+        font-size: calc(var(--grid-row-size) * 0.55);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -293,7 +293,7 @@
         align-items: center;
         justify-content: center;
         font-weight: 700;
-        font-size: 0.95em;
+        font-size: calc(var(--grid-row-size) * 0.35);
         color: #e2e8f0;
         border-radius: 6px;
         background-color: rgba(15, 23, 42, 0.2);
@@ -755,8 +755,8 @@
       #current-file-display {
         display: none;
         position: fixed;
-        top: 60px;
-        right: 10px;
+        top: 10px;
+        left: 10px;
         background-color: rgba(0, 0, 0, 0.85);
         padding: 12px 18px;
         border-radius: 10px;
@@ -965,6 +965,8 @@
         background-color: #1f1f1f;
         width: min(95vw, 1200px);
         max-width: 1200px;
+        max-height: 85vh;
+        overflow-y: auto;
         border-radius: 14px;
         padding: 24px;
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
@@ -1346,6 +1348,12 @@
                   清除所有標記
                 </button>
               </div>
+              <div class="grid-search" style="align-items:center">
+                <label style="color:white;font-size:13px;white-space:nowrap">每行張數</label>
+                <input type="number" id="gridColsInput" value="15" min="5" max="30"
+                  style="width:55px;min-width:55px;padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(30,41,59,0.7);color:white;text-align:center">
+                <button id="gridColsApplyBtn">套用</button>
+              </div>
             </div>
           </div>
           <div id="grid-scroll-container">
@@ -1405,20 +1413,20 @@
                 <label for="speed-slider">速度 (秒/張):</label>
                 <div class="speed-adjust">
                   <button type="button" id="speed-down-btn" class="speed-btn">
-                    -0.05
+                    -0.01
                   </button>
-                  <div class="speed-display" id="speed-value">0.30</div>
+                  <div class="speed-display" id="speed-value">0.10</div>
                   <button type="button" id="speed-up-btn" class="speed-btn">
-                    +0.05
+                    +0.01
                   </button>
                 </div>
                 <input
                   type="range"
                   id="speed-slider"
-                  min="0.05"
-                  max="1.5"
-                  step="0.05"
-                  value="0.30"
+                  min="0.01"
+                  max="0.15"
+                  step="0.01"
+                  value="0.10"
                 />
               </div>
               <div
@@ -1618,12 +1626,14 @@
         const jumpApplyBtn = document.getElementById("jump-apply-btn");
         const jumpBackBtn = document.getElementById("jump-back-btn");
         const jumpForwardBtn = document.getElementById("jump-forward-btn");
-        const GRID_COLS = 15;
-        const GRID_COLS_WITH_LABEL = GRID_COLS + 1;
+        let GRID_COLS = 15;
+        let GRID_COLS_WITH_LABEL = GRID_COLS + 1;
         const driveModal = document.getElementById("drive-modal");
         const driveFileList = document.getElementById("drive-file-list");
         const driveCancelBtn = document.getElementById("drive-cancel-btn");
         const DRIVE_PICKER_CANCELLED = "drive-picker-cancelled";
+
+        let currentDeck = null;
 
         if (gridContainer) {
           gridContainer.style.setProperty("--grid-cols", GRID_COLS_WITH_LABEL);
@@ -1650,19 +1660,19 @@
         let cardSpeechSequence = 0;
         let waitingForAutoplay = false;
         const speechConfig = {
-          rate: 6.5,
+          rate: 2.0,
           pitch: 1.0,
           volume: 1.0,
           pauseBetweenNumbers: 120,
         };
         const speechVoiceNameHints = [
-          "Microsoft Hanhan",
-          "Microsoft HsiaoChen",
           "Google 國語",
           "Google",
           "Mei-Jia",
           "Ting-Ting",
           "Sin-ji",
+          "Microsoft Hanhan",
+          "Microsoft HsiaoChen",
         ];
         let preferredSpeechVoice = null;
         let gridCells = [];
@@ -1683,9 +1693,9 @@
         fileInput.addEventListener("change", handleFileSelect);
         document.addEventListener("keydown", handleKeyPress);
         if (speedDownBtn)
-          speedDownBtn.addEventListener("click", () => adjustSpeed(-0.05));
+          speedDownBtn.addEventListener("click", () => adjustSpeed(-0.01));
         if (speedUpBtn)
-          speedUpBtn.addEventListener("click", () => adjustSpeed(0.05));
+          speedUpBtn.addEventListener("click", () => adjustSpeed(0.01));
         speedSlider.addEventListener("input", handleSpeedChange);
         toggleAutoplayBtn.addEventListener("click", toggleAutoplay);
         toggleManagerBtn.addEventListener("click", toggleFileManager);
@@ -1775,6 +1785,41 @@
         if (clearAllMarksBtn) {
           clearAllMarksBtn.addEventListener("click", clearAllMarks);
         }
+
+        // 根據容器寬度和列數計算正方形格子大小
+        function updateGridCellSize() {
+          if (!gridContainer) return;
+          const containerWidth = gridContainer.clientWidth;
+          if (containerWidth <= 0) return;
+          const totalCols = GRID_COLS_WITH_LABEL;
+          const colGap = 2;
+          const cellSize = Math.floor((containerWidth - (totalCols - 1) * colGap) / totalCols);
+          const clamped = Math.max(28, Math.min(60, cellSize));
+          gridContainer.style.setProperty("--grid-row-size", clamped + "px");
+        }
+
+        // 每行張數設定
+        const gridColsInput = document.getElementById("gridColsInput");
+        const gridColsApplyBtn = document.getElementById("gridColsApplyBtn");
+        if (gridColsApplyBtn) {
+          gridColsApplyBtn.addEventListener("click", () => {
+            const val = parseInt(gridColsInput.value) || 15;
+            const clamped = Math.max(5, Math.min(30, val));
+            gridColsInput.value = clamped;
+            GRID_COLS = clamped;
+            GRID_COLS_WITH_LABEL = GRID_COLS + 1;
+            if (gridContainer) {
+              gridContainer.style.setProperty("--grid-cols", GRID_COLS_WITH_LABEL);
+            }
+            updateGridCellSize();
+            if (currentDeck && currentDeck.length > 0) {
+              renderDeckGrid(currentDeck);
+              highlightCurrentCardInGrid();
+            }
+          });
+        }
+        window.addEventListener("resize", updateGridCellSize);
+
         resetGridPanel();
 
         // 匯出/匯入功能
@@ -2475,6 +2520,11 @@
             updateJumpInputValue();
           }
         }
+        // 數字轉中文，避免 TTS 引擎把阿拉伯數字唸得太短或唸成英文
+        const digitToChinese = {
+          "0": "零", "1": "一", "2": "二", "3": "三", "4": "四",
+          "5": "五", "6": "六", "7": "七", "8": "八", "9": "九",
+        };
         function speakCard(card) {
           // 數字10、J、Q、K都唸成「0」
           let rankText = card.rank;
@@ -2496,39 +2546,27 @@
           speakCardNumbers(comboCode, rankText);
         }
         function speakCardNumbers(firstNumber, secondNumber) {
-          const pauseBetweenNumbers = speechConfig.pauseBetweenNumbers;
           if (cardSpeechTimeout) {
             clearTimeout(cardSpeechTimeout);
             cardSpeechTimeout = null;
           }
           const sequenceId = ++cardSpeechSequence;
-          window.speechSynthesis.cancel();
-          const firstUtterance = createSpeechUtterance(firstNumber);
-          const secondUtterance = createSpeechUtterance(secondNumber);
-          firstUtterance.onend = () => {
-            if (sequenceId !== cardSpeechSequence) return;
-            cardSpeechTimeout = setTimeout(() => {
-              if (sequenceId !== cardSpeechSequence) return;
-              cardSpeechTimeout = null;
-              window.speechSynthesis.speak(secondUtterance);
-            }, pauseBetweenNumbers);
-          };
-          firstUtterance.onerror = () => {
+          const synth = window.speechSynthesis;
+          synth.pause();
+          synth.cancel();
+          const firstChinese = digitToChinese[firstNumber] || firstNumber;
+          const secondChinese = digitToChinese[secondNumber] || secondNumber;
+          const first = createSpeechUtterance(firstChinese);
+          const second = createSpeechUtterance(secondChinese);
+          second.onend = () => {
             handleCardSpeechComplete(sequenceId);
           };
-          firstUtterance.oncancel = () => {
+          second.onerror = () => {
             handleCardSpeechComplete(sequenceId);
           };
-          secondUtterance.onend = () => {
-            handleCardSpeechComplete(sequenceId);
-          };
-          secondUtterance.oncancel = () => {
-            handleCardSpeechComplete(sequenceId);
-          };
-          secondUtterance.onerror = () => {
-            handleCardSpeechComplete(sequenceId);
-          };
-          window.speechSynthesis.speak(firstUtterance);
+          synth.speak(first);
+          synth.speak(second);
+          synth.resume();
         }
         function initSpeechVoice() {
           const synth = window.speechSynthesis;
@@ -2868,8 +2906,10 @@
         }
 
         function prepareGridPanel(deck) {
+          currentDeck = deck;
           clearSearchHighlights();
           renderDeckGrid(deck);
+          updateGridCellSize();
           updateGridSearchAvailability(Array.isArray(deck) && deck.length > 0);
           if (gridSearchInput) {
             gridSearchInput.value = "";

@@ -9,12 +9,15 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Share+Tech+Mono&family=Noto+Serif+TC:wght@400;600;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=VT323&family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Noto+Serif+TC:wght@400;600&display=swap"
         rel="stylesheet">
+
 
     <style>
         /* ============================================================
-   DARK CASINO VIP THEME — AT 3.0
+   CRT TERMINAL — 工業復古未來風  AT 3.0
+   設計方向：陰極射線管磷光監控面板
+   字體：VT323（點陣展示）/ Share Tech Mono（數據）/ Rajdhani（標題）
    ============================================================ */
 
         @font-face {
@@ -26,35 +29,58 @@
         }
 
         :root {
-            --bg-void: #02040a;
-            --bg-base: #060d1c;
-            --bg-panel: rgba(8, 18, 40, 0.92);
-            --bg-row-alt: rgba(255, 255, 255, 0.012);
+            /* CRT 磷光色系 */
+            --phosphor: #00ff88;
+            --phosphor-dim: #00cc66;
+            --phosphor-faint: rgba(0, 255, 136, 0.15);
+            --phosphor-glow: 0 0 6px #00ff88, 0 0 14px rgba(0, 255, 136, 0.55), 0 0 28px rgba(0, 255, 136, 0.2);
+            --phosphor-soft: 0 0 4px rgba(0, 255, 136, 0.7);
 
-            --gold: #c9a227;
-            --gold-bright: #f0c840;
-            --gold-dim: #7a6020;
-            --gold-glow: rgba(201, 162, 39, 0.45);
+            /* 危險色 / 警告 / 中性 */
+            --red-alert: #ff3b3b;
+            --red-glow: 0 0 8px #ff3b3b, 0 0 20px rgba(255, 59, 59, 0.5);
+            --amber: #ffaa00;
+            --amber-glow: 0 0 6px #ffaa00, 0 0 16px rgba(255, 170, 0, 0.4);
+            --cyan: #00d4ff;
+            --cyan-glow: 0 0 6px #00d4ff, 0 0 14px rgba(0, 212, 255, 0.4);
 
-            --crimson: #e63946;
-            --sapphire: #4a9eff;
-            --emerald: #2ec4b6;
+            /* 介面底色 */
+            --bg-void: #000a04;
+            --bg-tube: #010f07;
+            --bg-panel: rgba(0, 20, 10, 0.92);
+            --bg-inset: rgba(0, 5, 2, 0.85);
 
-            --text-primary: #f0e6d3;
-            --text-secondary: #a89070;
-            --text-dim: #3a3858;
+            /* 文字 */
+            --text-bright: #00ff88;
+            --text-mid: #00cc66;
+            --text-dim: #006633;
+            --text-off: #003d1f;
 
-            /* legacy compat */
-            --shuiro: var(--crimson);
-            --ai: var(--sapphire);
-            --matcha: var(--emerald);
-            --sumi: var(--text-primary);
-            --sumi-light: var(--text-secondary);
-            --kincha: var(--gold);
+            /* 邊框 */
+            --border-glow: 1px solid rgba(0, 255, 136, 0.35);
+            --border-dim: 1px solid rgba(0, 255, 136, 0.12);
+
+            /* 遊戲顏色（與 JS 兼容的 legacy 變數） */
+            --shuiro: var(--red-alert);
+            --ai: var(--cyan);
+            --matcha: var(--phosphor);
+            --sumi: var(--text-bright);
+            --sumi-light: var(--text-mid);
+            --kincha: var(--amber);
             --washi: var(--bg-panel);
+            --crimson: var(--red-alert);
+            --sapphire: var(--cyan);
+            --emerald: var(--phosphor);
+            --gold: var(--amber);
+            --gold-bright: var(--amber);
+            --gold-dim: #664400;
+            --gold-glow: var(--amber-glow);
+            --bg-row-alt: rgba(0, 255, 136, 0.025);
 
-            --font-display: 'Cinzel', serif;
+            /* 字體 */
+            --font-display: 'VT323', monospace;
             --font-mono: 'Share Tech Mono', monospace;
+            --font-label: 'Rajdhani', sans-serif;
             --font-body: 'Noto Serif TC', serif;
             --font-tegomin: 'Noto Serif TC', serif;
         }
@@ -63,36 +89,84 @@
             box-sizing: border-box;
         }
 
+        /* ── 全域 + 背景 ── */
         body {
             margin: 0;
             padding: 16px;
-            font-family: var(--font-body);
+            font-family: var(--font-mono);
             background: var(--bg-void);
-            background-image:
-                radial-gradient(ellipse 80% 50% at 50% -10%, rgba(15, 40, 100, 0.55) 0%, transparent 70%),
-                radial-gradient(ellipse 55% 40% at 85% 100%, rgba(100, 20, 35, 0.3) 0%, transparent 60%);
-            color: var(--text-primary);
+            color: var(--text-bright);
             min-height: 100vh;
             overflow-x: hidden;
+            cursor: crosshair;
+            /* 噪點 + 掃描線 + 暗角 */
+            background-image:
+                radial-gradient(ellipse at center, rgba(0, 30, 15, 0.6) 0%, var(--bg-void) 75%);
         }
 
+        /* CRT 掃描線疊層 */
         body::before {
             content: '';
             position: fixed;
             inset: 0;
-            background: repeating-linear-gradient(0deg,
-                    rgba(0, 0, 0, 0.04) 0px, rgba(0, 0, 0, 0.04) 1px,
-                    transparent 1px, transparent 3px);
+            z-index: 9998;
             pointer-events: none;
-            z-index: 9999;
-            opacity: 0.45;
+            background: repeating-linear-gradient(0deg,
+                    transparent 0px, transparent 2px,
+                    rgba(0, 0, 0, 0.18) 2px, rgba(0, 0, 0, 0.18) 4px);
+            animation: scanroll 8s linear infinite;
         }
 
+        @keyframes scanroll {
+            0% {
+                background-position: 0 0;
+            }
+
+            100% {
+                background-position: 0 400px;
+            }
+        }
+
+        /* 暗角 vignette */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            z-index: 9997;
+            pointer-events: none;
+            background: radial-gradient(ellipse at center,
+                    transparent 55%,
+                    rgba(0, 0, 0, 0.7) 100%);
+        }
+
+        /* ── 容器 ── */
         .container {
             max-width: 1800px;
             margin: 0 auto;
             padding: 12px;
             position: relative;
+        }
+
+        /* 頁面載入動畫 */
+        @keyframes crtOn {
+            0% {
+                opacity: 0;
+                transform: scaleY(0.01);
+                filter: brightness(5);
+            }
+
+            5% {
+                opacity: 1;
+                transform: scaleY(1);
+            }
+
+            100% {
+                filter: brightness(1);
+            }
+        }
+
+        .container {
+            animation: crtOn 0.6s ease-out forwards;
         }
 
         /* ── TOP CONTROLS ── */
@@ -103,10 +177,35 @@
             margin-bottom: 14px;
             padding: 10px 18px;
             background: var(--bg-panel);
-            border: 1px solid rgba(201, 162, 39, 0.22);
-            border-radius: 12px;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+            border: var(--border-glow);
+            border-radius: 4px;
+            box-shadow: inset 0 0 30px rgba(0, 255, 136, 0.04),
+                var(--phosphor-soft),
+                0 4px 20px rgba(0, 0, 0, 0.7);
+            position: relative;
+        }
+
+        /* 角落裝飾 */
+        .top-controls::before,
+        .top-controls::after {
+            content: '';
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border-color: var(--phosphor);
+            border-style: solid;
+        }
+
+        .top-controls::before {
+            top: -1px;
+            left: -1px;
+            border-width: 2px 0 0 2px;
+        }
+
+        .top-controls::after {
+            top: -1px;
+            right: -1px;
+            border-width: 2px 2px 0 0;
         }
 
         .suit-selector {
@@ -125,31 +224,60 @@
             gap: 18px;
         }
 
+        /* 花色按鈕 — 純文字符號版 */
         .suit-button {
-            width: 78px;
-            height: 78px;
-            border: none;
-            background: transparent;
-            cursor: pointer;
+            width: 76px;
+            height: 76px;
+            border: 1px solid rgba(0, 255, 136, 0.2);
+            background: var(--bg-inset);
+            cursor: crosshair;
             padding: 0;
-            transition: transform .3s cubic-bezier(.68, -.55, .265, 1.55), filter .2s;
-            filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.7));
+            border-radius: 4px;
+            transition: all .25s cubic-bezier(.68, -.55, .265, 1.55);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        .suit-button img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
+        .suit-symbol {
+            font-size: 46px;
+            line-height: 1;
+            font-family: serif;
+            display: block;
+            transition: all .2s ease;
+        }
+
+        .suit-button[data-value="♠"] .suit-symbol,
+        .suit-button[data-value="♣"] .suit-symbol {
+            color: var(--phosphor-dim);
+            text-shadow: 0 0 8px rgba(0, 255, 136, 0.35);
+        }
+
+        .suit-button[data-value="♥"] .suit-symbol,
+        .suit-button[data-value="♦"] .suit-symbol {
+            color: var(--red-alert);
+            text-shadow: 0 0 8px rgba(255, 59, 59, 0.4);
         }
 
         .suit-button:hover {
-            transform: scale(1.12) rotate(5deg);
-            filter: drop-shadow(0 0 10px var(--gold)) brightness(1.1);
+            border-color: rgba(0, 255, 136, 0.5);
+            transform: scale(1.1) rotate(5deg);
+            box-shadow: var(--phosphor-soft);
         }
 
         .suit-button.selected {
-            transform: scale(1.28);
-            animation: suitBounce .45s cubic-bezier(.68, -.55, .265, 1.55), suitPulse 2s ease-in-out infinite .45s;
+            border-color: var(--phosphor);
+            background: rgba(0, 255, 136, 0.1);
+            box-shadow: var(--phosphor-soft), inset 0 0 12px rgba(0, 255, 136, 0.08);
+            transform: scale(1.15);
+            animation: suitBounce .4s ease, suitPulse 2s ease-in-out infinite .4s;
+        }
+
+        .suit-button.selected[data-value="♥"],
+        .suit-button.selected[data-value="♦"] {
+            border-color: var(--red-alert);
+            background: rgba(255, 59, 59, 0.12);
+            box-shadow: var(--red-glow);
         }
 
         @keyframes suitBounce {
@@ -157,12 +285,12 @@
                 transform: scale(1);
             }
 
-            55% {
-                transform: scale(1.35);
+            60% {
+                transform: scale(1.22);
             }
 
             100% {
-                transform: scale(1.28);
+                transform: scale(1.15);
             }
         }
 
@@ -170,15 +298,15 @@
 
             0%,
             100% {
-                filter: drop-shadow(0 0 12px var(--gold-glow)) brightness(1.12);
+                box-shadow: var(--phosphor-soft);
             }
 
             50% {
-                filter: drop-shadow(0 0 22px rgba(201, 162, 39, .9)) brightness(1.24);
+                box-shadow: 0 0 16px var(--phosphor), 0 0 32px rgba(0, 255, 136, 0.35);
             }
         }
 
-        /* Signal count */
+        /* 訊號張數 */
         .signal-count-wrapper {
             position: relative;
             display: flex;
@@ -188,44 +316,46 @@
 
         .signal-count-card {
             position: relative;
-            width: 74px;
-            height: 74px;
-            background: rgba(201, 162, 39, 0.07);
-            border: 1px solid rgba(201, 162, 39, 0.4);
+            width: 72px;
+            height: 72px;
+            background: var(--bg-inset);
+            border: var(--border-glow);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 0 18px rgba(201, 162, 39, 0.18), inset 0 0 12px rgba(0, 0, 0, 0.5);
+            box-shadow: var(--phosphor-soft), inset 0 0 15px rgba(0, 255, 136, 0.08);
         }
 
         .signal-count-card img {
             width: 55%;
             height: 55%;
             object-fit: contain;
-            opacity: 0.35;
+            opacity: 0.2;
             position: absolute;
+            filter: hue-rotate(80deg);
         }
 
         .signal-count-value {
             position: relative;
-            font-size: 26px;
-            font-weight: 700;
-            font-family: var(--font-mono);
-            color: var(--gold-bright);
-            text-shadow: 0 0 12px var(--gold-glow);
             z-index: 1;
+            font-size: 30px;
+            font-weight: 400;
+            font-family: var(--font-display);
+            color: var(--phosphor);
+            text-shadow: var(--phosphor-glow);
+            letter-spacing: 2px;
         }
 
-        /* Clear btn */
+        /* 清除按鈕 */
         .signal-clear-btn {
             padding: 0;
-            background: rgba(201, 162, 39, 0.07);
-            border: 1px solid rgba(201, 162, 39, 0.28);
-            border-radius: 8px;
-            width: 42px;
-            height: 58px;
-            cursor: pointer;
+            background: var(--bg-inset);
+            border: var(--border-dim);
+            border-radius: 3px;
+            width: 40px;
+            height: 56px;
+            cursor: crosshair;
             transition: all .2s;
             display: flex;
             align-items: center;
@@ -234,17 +364,17 @@
         }
 
         .signal-clear-btn img {
-            width: 65%;
-            height: 65%;
+            width: 60%;
+            height: 60%;
             object-fit: contain;
-            filter: brightness(0) invert(1) sepia(1) saturate(3) hue-rotate(5deg);
-            opacity: 0.65;
+            filter: hue-rotate(80deg) brightness(0.6);
+            opacity: 0.7;
         }
 
         .signal-clear-btn:hover {
-            background: rgba(201, 162, 39, 0.18);
-            border-color: rgba(201, 162, 39, 0.55);
-            box-shadow: 0 0 12px var(--gold-glow);
+            background: rgba(0, 255, 136, 0.1);
+            border-color: rgba(0, 255, 136, 0.5);
+            box-shadow: var(--phosphor-soft);
         }
 
         .signal-clear-btn:focus-visible,
@@ -252,62 +382,40 @@
             outline: none;
         }
 
-        /* GO button */
-        .go-button {
-            width: 88px;
-            height: 88px;
-            border: none;
-            background: transparent;
-            cursor: pointer;
-            padding: 0;
-            transition: all .2s;
-            filter: drop-shadow(0 0 7px var(--gold-glow));
-        }
-
-        .go-button img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-        }
-
-        .go-button:hover {
-            filter: drop-shadow(0 0 16px rgba(201, 162, 39, .8)) brightness(1.1);
-            transform: scale(1.09);
-        }
-
-        /* Stop btn */
+        /* GO 按鈕 */
+        /* 停止按鈕 */
         .generate-stop-btn {
-            width: 60px;
+            width: 58px;
             height: 30px;
-            border: 1px solid rgba(230, 57, 70, .55);
-            border-radius: 6px;
-            background: linear-gradient(180deg, rgba(230, 57, 70, .28), rgba(160, 25, 35, .35));
-            color: #ff9090;
+            border: 1px solid rgba(255, 59, 59, 0.5);
+            border-radius: 3px;
+            background: rgba(255, 59, 59, 0.1);
+            color: var(--red-alert);
             font-size: 12px;
             font-weight: 700;
-            cursor: pointer;
+            cursor: crosshair;
             transition: all .15s;
-            font-family: var(--font-body);
+            font-family: var(--font-mono);
+            text-shadow: var(--red-glow);
         }
 
         .generate-stop-btn:hover {
-            background: linear-gradient(180deg, rgba(230, 57, 70, .45), rgba(160, 25, 35, .55));
-            box-shadow: 0 0 10px rgba(230, 57, 70, .4);
+            background: rgba(255, 59, 59, 0.2);
+            box-shadow: var(--red-glow);
         }
 
         .generate-stop-btn:disabled {
-            opacity: .35;
+            opacity: .3;
             cursor: not-allowed;
         }
 
-        /* Recovery inputs */
+        /* 回復分析輸入 */
         .recovery-check-inputs {
             display: flex;
             flex-direction: row;
             flex-wrap: wrap;
             gap: 6px 10px;
             align-items: flex-end;
-            justify-content: flex-start;
             margin: 0 8px;
             max-width: 760px;
         }
@@ -321,146 +429,133 @@
 
         .recovery-input-label {
             font-size: 10px;
-            color: var(--text-secondary);
-            font-weight: 500;
+            color: var(--text-dim);
+            font-weight: 600;
             white-space: nowrap;
-            text-align: left;
+            font-family: var(--font-label);
+            letter-spacing: 1px;
+            text-transform: uppercase;
         }
 
         .recovery-input {
             width: 55px;
             height: 26px;
             padding: 2px 4px;
-            border: 1px solid rgba(201, 162, 39, .28);
-            border-radius: 4px;
-            font-size: 11px;
+            border: var(--border-dim);
+            border-radius: 2px;
+            font-size: 12px;
             text-align: center;
-            background: rgba(4, 10, 24, .9);
-            color: var(--text-primary);
+            background: var(--bg-inset);
+            color: var(--phosphor);
             transition: all .2s;
             font-family: var(--font-mono);
         }
 
         .recovery-input:hover {
-            border-color: rgba(201, 162, 39, .55);
+            border-color: rgba(0, 255, 136, 0.5);
         }
 
         .recovery-input:focus {
             outline: none;
-            border-color: var(--gold);
-            box-shadow: 0 0 0 3px rgba(201, 162, 39, .15);
+            border-color: var(--phosphor);
+            box-shadow: var(--phosphor-soft);
         }
 
         .recovery-input::placeholder {
-            color: var(--text-dim);
+            color: var(--text-off);
             font-size: 9px;
         }
 
-        .recovery-optimize-btn {
-            width: 70px;
-            height: 26px;
-            border: 1px solid rgba(74, 158, 255, .45);
-            border-radius: 6px;
-            background: linear-gradient(180deg, rgba(74, 158, 255, .22), rgba(30, 80, 180, .3));
-            color: #88ccff;
-            font-size: 11px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all .15s;
-            font-family: var(--font-body);
+        .recovery-optimize-btn, .recovery-rollback-btn {
+            display: none;
         }
 
-        .recovery-optimize-btn:hover {
-            background: linear-gradient(180deg, rgba(74, 158, 255, .38), rgba(30, 80, 180, .48));
-            box-shadow: 0 0 10px rgba(74, 158, 255, .35);
-        }
-
-        .recovery-optimize-btn:disabled {
-            opacity: .35;
-            cursor: not-allowed;
-            transform: none;
-            filter: none;
-        }
-
-        .recovery-rollback-btn {
-            width: 70px;
-            height: 26px;
-            border: 1px solid rgba(100, 116, 139, .35);
-            border-radius: 6px;
-            background: linear-gradient(180deg, rgba(100, 116, 139, .18), rgba(55, 65, 80, .25));
-            color: #94a3b8;
-            font-size: 11px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all .15s;
-            font-family: var(--font-body);
-        }
-
-        .recovery-rollback-btn:hover {
-            background: linear-gradient(180deg, rgba(100, 116, 139, .32), rgba(55, 65, 80, .4));
-            box-shadow: 0 0 8px rgba(100, 116, 139, .28);
-        }
-
-        .recovery-rollback-btn:disabled {
-            opacity: .35;
-            cursor: not-allowed;
-            transform: none;
-            filter: none;
-        }
-
-        /* ── RANK SELECTOR ── */
+        /* ── 牌面選擇列 ── */
         .rank-selector-row {
             display: flex;
             gap: 6px;
             margin-bottom: 14px;
             padding: 10px 14px;
             background: var(--bg-panel);
-            border: 1px solid rgba(201, 162, 39, .16);
-            border-radius: 10px;
+            border: var(--border-dim);
+            border-radius: 4px;
             overflow-x: auto;
-            backdrop-filter: blur(8px);
+            box-shadow: inset 0 0 20px rgba(0, 255, 136, 0.03);
         }
 
         .rank-button {
             flex: 0 0 auto;
-            width: 73px;
-            height: 104px;
-            border: none;
-            background: transparent;
-            cursor: pointer;
+            width: 62px;
+            height: 86px;
+            border: 1px solid rgba(0, 255, 136, 0.2);
+            background: var(--bg-inset);
+            border-radius: 4px;
+            cursor: crosshair;
             padding: 0;
-            transition: transform .3s ease, filter .2s;
-            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, .7));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            transition: transform .25s ease, border-color .2s, box-shadow .2s;
         }
 
-        .rank-button img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
+        .rank-value {
+            font-family: var(--font-display);
+            font-size: 40px;
+            line-height: 1;
+            color: var(--phosphor-dim);
+            text-shadow: 0 0 6px rgba(0, 255, 136, 0.3);
+            user-select: none;
+            transition: all .2s;
         }
 
         .rank-button:hover {
-            transform: translateY(-9px) rotate(-2deg);
-            filter: drop-shadow(0 10px 18px rgba(0, 0, 0, .85)) brightness(1.08);
+            transform: translateY(-10px) rotate(-2deg);
+            border-color: rgba(0, 255, 136, 0.55);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, .6), var(--phosphor-soft);
+        }
+
+        .rank-button:hover .rank-value {
+            color: var(--phosphor);
+            text-shadow: var(--phosphor-glow);
         }
 
         .rank-button.selected {
-            position: relative;
+            border-color: var(--phosphor);
+            background: rgba(0, 255, 136, 0.12);
+            box-shadow: var(--phosphor-soft), inset 0 0 15px rgba(0, 255, 136, 0.08);
+            transform: translateY(-4px);
         }
 
-        .rank-button.selected::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: url('nb/背面.png') center/contain no-repeat;
-            z-index: 1;
+        .rank-button.selected .rank-value {
+            color: var(--phosphor);
+            text-shadow: var(--phosphor-glow);
+            animation: rankPulse 1.8s ease-in-out infinite;
         }
 
-        .rank-button.selected img {
-            opacity: 0;
+        @keyframes rankPulse {
+
+            0%,
+            100% {
+                text-shadow: var(--phosphor-glow);
+            }
+
+            50% {
+                text-shadow: 0 0 20px var(--phosphor), 0 0 40px rgba(0, 255, 136, 0.5);
+            }
         }
 
-        /* Violation stats */
+        .rank-button[data-value="10"] .rank-value {
+            font-size: 30px;
+        }
+
+        .rank-button[data-value="J"] .rank-value,
+        .rank-button[data-value="Q"] .rank-value,
+        .rank-button[data-value="K"] .rank-value {
+            color: var(--text-dim);
+        }
+
+        /* 違規統計 */
         .violation-stats {
             display: flex;
             gap: 10px;
@@ -470,107 +565,133 @@
 
         .violation-card {
             position: relative;
-            width: 108px;
-            padding: 10px;
-            background: rgba(6, 14, 32, .9);
-            border: 1px solid rgba(201, 162, 39, .22);
-            border-radius: 8px;
-            box-shadow: 0 4px 14px rgba(0, 0, 0, .45), inset 0 1px 0 rgba(255, 255, 255, .03);
+            width: 106px;
+            padding: 8px;
+            background: var(--bg-inset);
+            border: var(--border-dim);
+            border-radius: 3px;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
             text-align: center;
-            transition: transform .2s, box-shadow .2s;
+            transition: all .2s;
+        }
+
+        .violation-card::before,
+        .violation-card::after {
+            content: '';
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-color: var(--text-dim);
+            border-style: solid;
+        }
+
+        .violation-card::before {
+            bottom: -1px;
+            left: -1px;
+            border-width: 0 0 1px 1px;
+        }
+
+        .violation-card::after {
+            bottom: -1px;
+            right: -1px;
+            border-width: 0 1px 1px 0;
         }
 
         .violation-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 7px 20px rgba(0, 0, 0, .55);
+            border-color: rgba(0, 255, 136, 0.3);
+            box-shadow: var(--phosphor-soft);
         }
 
         .violation-label {
-            font-size: 12px;
-            color: var(--text-secondary);
+            font-size: 10px;
+            color: var(--text-dim);
             margin-bottom: 4px;
             font-weight: 600;
             white-space: nowrap;
+            font-family: var(--font-label);
+            letter-spacing: 1px;
+            text-transform: uppercase;
         }
 
         .violation-count {
-            font-size: 26px;
-            font-weight: 700;
-            color: var(--crimson);
-            font-family: var(--font-mono);
+            font-size: 30px;
+            font-weight: 400;
+            color: var(--red-alert);
+            font-family: var(--font-display);
             line-height: 1;
-            text-shadow: 0 0 10px rgba(230, 57, 70, .55);
+            letter-spacing: 2px;
+            text-shadow: var(--red-glow);
         }
 
         .violation-card.no-violation .violation-count {
-            color: var(--emerald);
-            text-shadow: 0 0 8px rgba(46, 196, 182, .5);
+            color: var(--phosphor);
+            text-shadow: var(--phosphor-soft);
         }
 
         .violation-card.has-violation {
-            border-color: rgba(230, 57, 70, .45);
-            background: rgba(28, 6, 10, .92);
-            box-shadow: 0 0 14px rgba(230, 57, 70, .18), inset 0 0 8px rgba(230, 57, 70, .05);
+            border-color: rgba(255, 59, 59, 0.45);
+            background: rgba(40, 0, 0, 0.9);
+            box-shadow: 0 0 12px rgba(255, 59, 59, 0.15);
         }
 
         .violation-card.has-violation .violation-count {
-            animation: pulseViolation 1.5s ease-in-out infinite;
+            animation: pulseViolation 1.2s ease-in-out infinite;
         }
 
         @keyframes pulseViolation {
 
             0%,
             100% {
-                transform: scale(1);
                 opacity: 1;
+                text-shadow: var(--red-glow);
             }
 
             50% {
-                transform: scale(1.06);
-                opacity: .8;
-                text-shadow: 0 0 20px rgba(230, 57, 70, .9);
+                opacity: .6;
+                text-shadow: 0 0 20px #ff3b3b, 0 0 40px rgba(255, 59, 59, 0.6);
             }
         }
 
         .violation-detail {
             font-size: 10px;
-            font-weight: 500;
-            color: var(--text-secondary);
-            margin-top: 4px;
+            color: var(--text-dim);
+            margin-top: 3px;
             line-height: 1.4;
-            min-height: 28px;
+            min-height: 26px;
             word-break: break-word;
+            font-family: var(--font-mono);
         }
 
         .violation-card.no-violation .violation-detail {
-            color: var(--emerald);
+            color: var(--text-mid);
         }
 
         .violation-card.has-violation .violation-detail {
-            color: var(--crimson);
+            color: var(--red-alert);
             font-weight: 600;
         }
 
         .recovery-card {
             display: inline-block;
-            background: rgba(6, 14, 32, .95);
-            border: 1px solid rgba(74, 158, 255, .38);
-            border-radius: 8px;
+            background: var(--bg-inset);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 3px;
             padding: 8px 12px;
             margin-left: 16px;
             vertical-align: middle;
-            box-shadow: 0 0 12px rgba(74, 158, 255, .14);
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.1);
         }
 
         .recovery-line {
             font-size: 11px;
             font-weight: 600;
-            color: var(--text-primary);
+            color: var(--text-bright);
             line-height: 1.5;
             white-space: nowrap;
+            font-family: var(--font-mono);
         }
 
-        /* ── MAIN CONTENT ── */
+        /* ── 主體三欄 ── */
         .main-content {
             display: grid;
             grid-template-columns: 0.6fr 6.4fr 3fr;
@@ -578,16 +699,15 @@
             min-height: 500px;
         }
 
-        /* ── LEFT SIDEBAR ── */
+        /* ── 左側工具列 ── */
         .tool-sidebar {
             display: flex;
             flex-direction: column;
-            gap: 8px;
-            padding: 12px 8px;
+            gap: 6px;
+            padding: 10px 6px;
             background: var(--bg-panel);
-            border: 1px solid rgba(201, 162, 39, .18);
-            border-radius: 12px;
-            backdrop-filter: blur(8px);
+            border: var(--border-dim);
+            border-radius: 4px;
         }
 
         .tool-sidebar::before,
@@ -597,19 +717,21 @@
 
         .tool-btn {
             width: 100%;
-            padding: 7px 4px;
-            background: linear-gradient(160deg, rgba(201, 162, 39, .12), rgba(80, 60, 15, .1));
-            border: 1px solid rgba(201, 162, 39, .28);
-            border-radius: 6px;
-            font-size: 17px;
-            font-weight: 600;
-            font-family: 'AT01', var(--font-body);
-            letter-spacing: 4.5px;
-            color: var(--gold-bright);
-            text-shadow: 0 0 8px var(--gold-glow);
-            cursor: pointer;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, .35), inset 0 1px 0 rgba(255, 255, 255, .04);
+            padding: 8px 4px;
+            background: var(--bg-inset);
+            border: var(--border-dim);
+            border-radius: 2px;
+            font-size: 18px;
+            font-weight: 400;
+            font-family: 'AT01', var(--font-display);
+            letter-spacing: 3px;
+            color: var(--phosphor-dim);
+            text-shadow: 0 0 6px rgba(0, 255, 136, 0.4);
+            cursor: crosshair;
+            box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.5);
             transition: all .2s ease;
+            position: relative;
+            overflow: hidden;
         }
 
         .tool-btn::before,
@@ -617,55 +739,126 @@
             display: none;
         }
 
+        .tool-btn::before {
+            content: '';
+            display: block !important;
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 136, 0.08), transparent);
+            transition: left .4s ease;
+        }
+
         .tool-btn:hover {
-            background: linear-gradient(160deg, rgba(201, 162, 39, .26), rgba(80, 60, 15, .2));
-            border-color: rgba(201, 162, 39, .58);
-            box-shadow: 0 0 16px var(--gold-glow), 0 4px 12px rgba(0, 0, 0, .4);
-            transform: translateY(-2px);
+            background: rgba(0, 255, 136, 0.06);
+            border-color: rgba(0, 255, 136, 0.45);
+            box-shadow: var(--phosphor-soft), inset 0 0 12px rgba(0, 255, 136, 0.05);
+            color: var(--phosphor);
+            text-shadow: var(--phosphor-glow);
+            transform: none;
+        }
+
+        .tool-btn:hover::before {
+            left: 100%;
         }
 
         .tool-btn:active {
-            transform: translateY(0);
+            transform: none;
+            box-shadow: inset 0 0 20px rgba(0, 255, 136, 0.15);
         }
 
         .tool-btn:disabled {
-            opacity: .32;
+            opacity: .25;
             cursor: not-allowed;
-            color: var(--text-dim);
+            color: var(--text-off);
             text-shadow: none;
-            transform: none;
         }
 
         .tool-btn:disabled:hover {
-            transform: none;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, .3);
-            background: linear-gradient(160deg, rgba(201, 162, 39, .06), rgba(80, 60, 15, .05));
+            background: var(--bg-inset);
+            border-color: rgba(0, 255, 136, 0.12);
+            box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.5);
+            color: var(--text-off);
+            text-shadow: none;
+        }
+
+        /* 生成中脈衝動畫 */
+        @keyframes generatingPulse {
+            0%   { opacity: 1;   box-shadow: 0 0 8px rgba(0, 255, 136, 0.3); }
+            50%  { opacity: 0.6; box-shadow: 0 0 20px rgba(0, 255, 136, 0.7); }
+            100% { opacity: 1;   box-shadow: 0 0 8px rgba(0, 255, 136, 0.3); }
+        }
+        .tool-btn.generating-pulse {
+            animation: generatingPulse 1s ease-in-out infinite;
+            opacity: 1 !important;
+            color: var(--phosphor) !important;
+            text-shadow: var(--phosphor-glow) !important;
+            border-color: rgba(0, 255, 136, 0.5) !important;
+        }
+
+        /* 生成中遮罩 */
+        .generating-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.65);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            gap: 18px;
+        }
+        .generating-overlay.active {
+            display: flex;
+        }
+        @keyframes spinGlow {
+            0%   { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .generating-spinner {
+            width: 60px; height: 60px;
+            border: 4px solid rgba(0, 255, 136, 0.15);
+            border-top: 4px solid var(--phosphor);
+            border-radius: 50%;
+            animation: spinGlow 0.8s linear infinite;
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+        }
+        .generating-text {
+            color: var(--phosphor);
+            font-size: 18px;
+            font-weight: bold;
+            text-shadow: var(--phosphor-glow);
+            letter-spacing: 2px;
         }
 
         .swap-preview-toggle {
             display: flex;
             align-items: center;
-            font-size: 12px;
-            color: var(--text-secondary);
+            font-size: 11px;
+            color: var(--text-dim);
             gap: 6px;
             margin-top: 4px;
             padding: 4px;
+            font-family: var(--font-label);
+            letter-spacing: 1px;
         }
 
         .swap-preview-toggle input {
-            width: 14px;
-            height: 14px;
-            accent-color: var(--gold);
+            width: 13px;
+            height: 13px;
+            accent-color: var(--phosphor);
         }
 
-        /* ── TABLE ── */
+        /* ── 主表格 ── */
         .table-container {
             position: relative;
             padding: 10px;
             background: var(--bg-panel);
-            border: 1px solid rgba(201, 162, 39, .14);
-            border-radius: 12px;
-            backdrop-filter: blur(6px);
+            border: var(--border-dim);
+            border-radius: 4px;
+            box-shadow: inset 0 0 30px rgba(0, 255, 136, 0.02);
         }
 
         .rounds-table {
@@ -677,27 +870,28 @@
         }
 
         .rounds-table th {
-            color: var(--gold);
+            color: var(--phosphor);
             font-weight: 600;
             padding: 6px 4px;
             text-align: center;
             border: none;
-            border-bottom: 1px solid rgba(201, 162, 39, .28);
-            letter-spacing: 2px;
-            font-size: 16px;
-            font-family: var(--font-body);
-            text-shadow: 0 0 6px var(--gold-glow);
+            border-bottom: 1px solid rgba(0, 255, 136, 0.25);
+            letter-spacing: 3px;
+            font-size: 14px;
+            font-family: var(--font-label);
+            text-transform: uppercase;
+            text-shadow: var(--phosphor-soft);
         }
 
         .rounds-table td {
-            padding: 2px 2px;
+            padding: 3px 3px;
             text-align: center;
             border: none;
-            border-bottom: 1px solid rgba(201, 162, 39, .06);
+            border-bottom: 1px solid rgba(0, 255, 136, 0.06);
             font-size: 16px;
             background: transparent;
-            color: var(--text-primary);
-            font-family: var(--font-body);
+            color: #00dd77;
+            font-family: var(--font-mono);
         }
 
         .rounds-table tbody tr:nth-child(even) td {
@@ -705,21 +899,959 @@
         }
 
         .rounds-table tbody tr:hover td {
-            background: rgba(201, 162, 39, .06);
+            background: rgba(0, 255, 136, 0.05);
+            color: var(--phosphor);
         }
 
         .rounds-table tr.violation-row td {
-            background: rgba(230, 57, 70, .1) !important;
-            border-bottom: 2px solid rgba(230, 57, 70, .45);
+            background: rgba(255, 59, 59, 0.16) !important;
+            border-bottom: 2px solid rgba(255, 59, 59, 0.7) !important;
         }
 
         .rounds-table tr.violation-row:hover td {
-            background: rgba(230, 57, 70, .16) !important;
+            background: rgba(255, 59, 59, 0.24) !important;
         }
 
         .rounds-table tr.swap-banker-six-row td {
-            background: rgba(46, 196, 182, .08) !important;
-            border-bottom: 2px solid rgba(46, 196, 182, .28);
+            background: rgba(0, 255, 136, 0.06) !important;
+            border-bottom: 1px solid rgba(0, 255, 136, 0.2);
+        }
+
+        .rounds-table tr.swap-banker-six-row:hover td {
+            background: rgba(0, 255, 136, 0.1) !important;
+        }
+
+        .rounds-table tr.banker-six-win-row td {
+            background: rgba(0, 255, 136, 0.04) !important;
+            border-bottom: 1px solid rgba(0, 255, 136, 0.12);
+        }
+
+        .rounds-table tr.banker-six-win-row:hover td {
+            background: rgba(0, 255, 136, 0.08) !important;
+        }
+
+        .rounds-table tr.card-count-mismatch td {
+            background: rgba(0, 212, 255, 0.07) !important;
+            border-bottom: 1px solid rgba(0, 212, 255, 0.25);
+        }
+
+        .rounds-table tr.card-count-mismatch:hover td {
+            background: rgba(0, 212, 255, 0.13) !important;
+        }
+
+        .rounds-table tr.card-color-violation-row td {
+            background: rgba(255, 170, 0, 0.07) !important;
+            border-bottom: 1px solid rgba(255, 170, 0, 0.3);
+        }
+
+        .rounds-table tr.card-color-violation-row:hover td {
+            background: rgba(255, 170, 0, 0.12) !important;
+        }
+
+        .rounds-table tr.selected-first td {
+            background: rgba(255, 59, 59, 0.08);
+            box-shadow: inset 0 0 0 1px rgba(255, 59, 59, 0.35);
+        }
+
+        .rounds-table tr.selected-second td {
+            background: rgba(0, 212, 255, 0.08);
+            box-shadow: inset 0 0 0 1px rgba(0, 212, 255, 0.3);
+        }
+
+        .rounds-table tr.s-signal-round td.result-cell {
+            border-bottom: 2px solid var(--red-alert);
+        }
+
+        .rounds-table tr.full-house-round td.result-cell {
+            border-bottom: 2px solid var(--phosphor);
+        }
+
+        .rounds-table td.banker-six-point {
+            color: var(--red-alert);
+            font-weight: 700;
+            position: relative;
+        }
+
+        .rounds-table td.banker-six-point::after {
+            content: '六';
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            font-size: 10px;
+            color: var(--red-alert);
+            opacity: .6;
+        }
+
+        .outcome-banker {
+            color: var(--red-alert) !important;
+            font-weight: 700;
+            text-shadow: var(--red-glow);
+        }
+
+        .outcome-player {
+            color: var(--cyan) !important;
+            font-weight: 700;
+            text-shadow: var(--cyan-glow);
+        }
+
+        .outcome-tie {
+            color: var(--phosphor) !important;
+            font-weight: 700;
+            text-shadow: var(--phosphor-soft);
+        }
+
+        /* 牌標籤 — 放大 */
+        .card-label {
+            display: inline-block;
+            padding: 2px 6px;
+            margin: 1px;
+            background: rgba(0, 255, 136, 0.04);
+            border: 1px solid rgba(0, 255, 136, 0.15);
+            border-radius: 2px;
+            font-size: 16px;
+            min-width: 26px;
+            color: #00dd77;
+            font-family: var(--font-mono);
+        }
+
+        .card-label.s-signal-card {
+            color: var(--red-alert);
+            font-weight: 700;
+            border-color: rgba(255, 59, 59, 0.35);
+            text-shadow: 0 0 5px rgba(255, 59, 59, 0.5);
+        }
+
+        .card-label.non-s-signal-card {
+            color: var(--text-dim);
+        }
+
+        .card-label.selected-first {
+            background: rgba(255, 59, 59, 0.1);
+            border-color: rgba(255, 59, 59, 0.6);
+            color: var(--red-alert);
+        }
+
+        .card-label.selected-second {
+            background: rgba(0, 212, 255, 0.1);
+            border-color: rgba(0, 212, 255, 0.6);
+            color: var(--cyan);
+        }
+
+        .card-label.highlighted-card-pos {
+            background: rgba(255, 170, 0, 0.2) !important;
+            border-color: var(--amber) !important;
+            box-shadow: 0 0 0 2px rgba(255, 170, 0, 0.35), var(--amber-glow) !important;
+            transform: scale(1.08);
+            color: var(--amber) !important;
+            animation: highlightPulse 1.1s ease-in-out infinite;
+        }
+
+        @keyframes highlightPulse {
+
+            0%,
+            100% {
+                filter: brightness(1);
+            }
+
+            50% {
+                filter: brightness(1.4);
+            }
+        }
+
+        tr.highlighted-row {
+            background: rgba(255, 170, 0, 0.05) !important;
+        }
+
+        .rounds-table td.cards-column .card-strip {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 2px;
+            justify-content: flex-start;
+            overflow-x: auto;
+            padding: 2px 0 0;
+        }
+
+        .rounds-table td.cards-column,
+        .rounds-table td.color-column,
+        .rounds-table td.hand-card-cell {
+            font-family: var(--font-mono);
+        }
+
+        /* 色點 */
+        .color-chips {
+            display: inline-flex;
+            gap: 4px;
+            align-items: center;
+            justify-content: flex-start;
+            vertical-align: middle;
+        }
+
+        .color-chip {
+            display: inline-flex;
+            min-width: 26px;
+            min-height: 26px;
+            border-radius: 50%;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 700;
+            color: #fff;
+            line-height: 1;
+            align-content: space-between;
+            flex-direction: column;
+        }
+
+        .color-chip.red {
+            background: var(--red-alert);
+            box-shadow: 0 0 8px rgba(255, 59, 59, 0.5);
+        }
+
+        .color-chip.blue {
+            background: var(--cyan);
+            box-shadow: 0 0 8px rgba(0, 212, 255, 0.4);
+        }
+
+        .card-back-red {
+            background: rgba(255, 59, 59, 0.07) !important;
+        }
+
+        .card-back-blue {
+            background: rgba(0, 212, 255, 0.07) !important;
+        }
+
+        /* ── 右側 ── */
+        .right-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .stats-row {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* HUD 莊閒和統計條 */
+        .hud-bars {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            min-width: 140px;
+            padding: 6px 10px;
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(0, 255, 136, 0.15);
+            border-radius: 6px;
+        }
+        .hud-bar-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .hud-bar-label {
+            width: 16px;
+            font-size: 11px;
+            font-weight: 700;
+            font-family: var(--font-mono);
+            text-align: center;
+        }
+        .hud-bar-label.hud-banker { color: var(--red-alert); }
+        .hud-bar-label.hud-player { color: var(--cyan); }
+        .hud-bar-label.hud-tie    { color: var(--phosphor); }
+        .hud-bar-track {
+            flex: 1;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+        .hud-bar-fill {
+            height: 100%;
+            width: 0%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+            position: relative;
+        }
+        .hud-banker-fill {
+            background: linear-gradient(90deg, var(--red-alert), #ff6b6b);
+            box-shadow: 0 0 8px rgba(255, 82, 82, 0.5);
+        }
+        .hud-player-fill {
+            background: linear-gradient(90deg, var(--cyan), #64d8ff);
+            box-shadow: 0 0 8px rgba(0, 200, 255, 0.5);
+        }
+        .hud-tie-fill {
+            background: linear-gradient(90deg, var(--phosphor), #66ffaa);
+            box-shadow: 0 0 8px rgba(0, 255, 136, 0.5);
+        }
+        .hud-bar-value {
+            width: 22px;
+            font-size: 11px;
+            font-weight: 700;
+            font-family: var(--font-mono);
+            text-align: right;
+        }
+        .hud-bar-value.hud-banker { color: var(--red-alert); }
+        .hud-bar-value.hud-player { color: var(--cyan); }
+        .hud-bar-value.hud-tie    { color: var(--phosphor); }
+        .hud-total-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid rgba(0, 255, 136, 0.1);
+            margin-top: 2px;
+            padding-top: 3px;
+        }
+        .hud-total-label {
+            font-size: 9px;
+            color: rgba(0, 255, 136, 0.4);
+            font-family: var(--font-mono);
+            letter-spacing: 2px;
+        }
+        .hud-total-value {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--phosphor);
+            font-family: var(--font-mono);
+            text-shadow: 0 0 6px rgba(0, 255, 136, 0.4);
+        }
+
+        /* 切牌 */
+        .cut-card {
+            background: transparent;
+            border: none;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            align-items: center;
+            box-shadow: none;
+        }
+
+        .cut-card input {
+            width: 80px;
+            height: 34px;
+            padding: 4px 8px;
+            border: var(--border-glow);
+            border-radius: 2px;
+            background: var(--bg-inset);
+            font-size: 16px;
+            font-weight: 400;
+            font-family: var(--font-display);
+            text-align: center;
+            color: var(--phosphor);
+            text-shadow: var(--phosphor-soft);
+            letter-spacing: 2px;
+            transition: all .2s;
+        }
+
+        .cut-card input:focus {
+            outline: none;
+            border-color: var(--phosphor);
+            box-shadow: var(--phosphor-soft);
+        }
+
+        .cut-card input::placeholder {
+            color: var(--text-off);
+            font-size: 11px;
+            letter-spacing: 0;
+            font-family: var(--font-mono);
+        }
+
+        .cut-card button {
+            width: 80px;
+            height: 34px;
+            padding: 4px 8px;
+            background: rgba(0, 255, 136, 0.07);
+            border: var(--border-glow);
+            border-radius: 2px;
+            font-size: 16px;
+            font-weight: 400;
+            font-family: 'AT01', var(--font-display);
+            letter-spacing: 2px;
+            cursor: crosshair;
+            color: var(--phosphor);
+            text-shadow: var(--phosphor-soft);
+            transition: all .2s;
+        }
+
+        .cut-card button:hover {
+            background: rgba(0, 255, 136, 0.15);
+            box-shadow: var(--phosphor-soft);
+        }
+
+        .cut-card button:active {
+            transform: none;
+        }
+
+        /* ── 日誌 ── */
+        .log-torn {
+            position: relative;
+            background: var(--bg-inset);
+            clip-path: none;
+            border: var(--border-dim);
+            border-radius: 4px;
+            padding: 14px;
+            min-height: 160px;
+            overflow-y: auto;
+            font-size: 12px;
+            line-height: 1.9;
+            box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.6);
+            font-family: var(--font-mono);
+            color: var(--text-dim);
+            filter: none;
+        }
+
+        .log-torn::before {
+            content: '> LOG OUTPUT';
+            position: absolute;
+            top: 6px;
+            left: 12px;
+            right: 12px;
+            font-size: 10px;
+            color: var(--text-dim);
+            font-family: var(--font-label);
+            letter-spacing: 3px;
+            border-bottom: 1px solid rgba(0, 255, 136, 0.1);
+            padding-bottom: 4px;
+        }
+
+        .log-torn::after {
+            display: none;
+        }
+
+        .log-torn .success {
+            color: var(--phosphor);
+            text-shadow: 0 0 4px rgba(0, 255, 136, 0.4);
+        }
+
+        .log-torn .error {
+            color: var(--red-alert);
+            text-shadow: 0 0 4px rgba(255, 59, 59, 0.4);
+        }
+
+        .log-torn .info {
+            color: var(--cyan);
+        }
+
+        /* ── 小網格 ── */
+        .mini-grid-wrapper {
+            background: var(--bg-inset);
+            border: var(--border-dim);
+            border-radius: 4px;
+            padding: 10px;
+            position: relative;
+        }
+
+        .mini-grid-wrapper::before {
+            display: none;
+        }
+
+        .grid-preview {
+            display: grid;
+            grid-template-columns: repeat(21, 1fr);
+            gap: 1px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .grid-preview .cell {
+            height: 15px;
+            background: rgba(0, 255, 136, 0.015);
+            border: 1px solid rgba(0, 255, 136, 0.04);
+            font-size: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-mid);
+            font-family: var(--font-mono);
+        }
+
+        .grid-preview .cell.result-banker {
+            color: var(--red-alert);
+            font-weight: 700;
+            background: transparent;
+        }
+
+        .grid-preview .cell.result-player {
+            color: var(--cyan);
+            font-weight: 700;
+            background: transparent;
+        }
+
+        .grid-preview .cell.result-tie {
+            color: var(--phosphor);
+            font-weight: 700;
+            background: transparent;
+        }
+
+        .grid-preview .cell.signal-match {
+            color: var(--red-alert);
+            font-weight: 700;
+        }
+
+        .grid-preview .cell.card-value {
+            color: var(--text-mid);
+        }
+
+        .grid-preview .cell.traverse-highlight,
+        .rounds-table td.traverse-highlight,
+        .card-label.traverse-highlight {
+            outline: 2px solid var(--amber);
+            outline-offset: -2px;
+            box-shadow: var(--amber-glow);
+            z-index: 10;
+            position: relative;
+        }
+
+        .grid-preview .cell.card-red {
+            background: rgba(255, 59, 59, 0.08);
+        }
+
+        .grid-preview .cell.card-blue {
+            background: rgba(0, 212, 255, 0.07);
+        }
+
+        .grid-placeholder {
+            text-align: center;
+            padding: 12px;
+            color: var(--text-off);
+            font-size: 11px;
+            grid-column: 1 / -1;
+            font-family: var(--font-mono);
+        }
+
+        /* ── 訊號摘要 ── */
+        .signal-summary {
+            background: var(--bg-inset);
+            border: var(--border-dim);
+            border-radius: 4px;
+            padding: 12px 14px;
+        }
+
+        .signal-summary .summary-title {
+            display: none;
+        }
+
+        .stats-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+            font-family: var(--font-mono);
+        }
+
+        .stats-table th,
+        .stats-table td {
+            border: 1px solid rgba(0, 255, 136, 0.1);
+            padding: 4px 6px;
+            font-size: 11px;
+            line-height: 1.3;
+            color: var(--text-mid);
+            text-align: center;
+        }
+
+        .stats-table th {
+            background: rgba(0, 255, 136, 0.07);
+            font-weight: 600;
+            color: var(--phosphor);
+            font-family: var(--font-label);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .stats-table td:first-child,
+        .stats-table th:first-child {
+            width: 32px;
+        }
+
+        .stats-table td:last-child,
+        .stats-table th:last-child {
+            width: 52px;
+            font-weight: 600;
+        }
+
+        .stats-table tr:last-child td {
+            background: rgba(0, 255, 136, 0.04);
+            font-weight: 600;
+        }
+
+        .stats-table td strong {
+            font-weight: 700;
+            color: var(--phosphor);
+        }
+
+        .stats-total {
+            margin-top: 8px;
+            font-size: 11px;
+            color: var(--text-dim);
+            font-family: var(--font-mono);
+        }
+
+        .stats-total strong {
+            margin-left: 4px;
+            color: var(--red-alert);
+        }
+
+        /* ── 工具 ── */
+        .hidden {
+            display: none !important;
+        }
+
+        .rank-checkboxes {
+            display: none;
+        }
+
+        /* ── 響應式 ── */
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 1fr 5fr 3fr;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .tool-sidebar {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+
+            .tool-btn {
+                flex: 1 1 auto;
+                min-width: 80px;
+            }
+
+            .recovery-check-inputs {
+                justify-content: center;
+            }
+
+            .recovery-input-item {
+                align-items: center;
+            }
+
+            .recovery-input-label {
+                text-align: center;
+            }
+        }
+
+        /* ── 浮動計算視窗 ── */
+        .floating-widget {
+            position: fixed;
+            top: 100px;
+            left: 100px;
+            z-index: 9999;
+            background: rgba(0, 12, 6, 0.98);
+            border: var(--border-glow);
+            border-radius: 4px;
+            box-shadow: var(--phosphor-soft), 0 10px 40px rgba(0, 0, 0, 0.8);
+            display: none;
+            width: auto;
+            min-width: 300px;
+            max-width: 380px;
+            padding: 10px;
+            backdrop-filter: blur(10px);
+        }
+
+        .widget-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(0, 255, 136, 0.15);
+            margin-bottom: 10px;
+            cursor: move;
+        }
+
+        .widget-title {
+            color: var(--phosphor);
+            font-size: 14px;
+            font-family: var(--font-label);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            text-shadow: var(--phosphor-soft);
+        }
+
+        .widget-content {
+            padding: 6px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            color: var(--text-bright);
+        }
+
+        .widget-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .widget-action {
+            border: var(--border-dim);
+            border-radius: 2px;
+            padding: 6px 10px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: crosshair;
+            color: var(--text-mid);
+            background: rgba(0, 255, 136, 0.05);
+            transition: all .2s;
+            font-family: var(--font-label);
+            letter-spacing: 1px;
+        }
+
+        .widget-action:hover {
+            background: rgba(0, 255, 136, 0.12);
+            border-color: rgba(0, 255, 136, 0.4);
+            color: var(--phosphor);
+        }
+
+        .widget-close {
+            background: rgba(0, 0, 0, 0.3);
+            border-color: var(--text-off);
+            color: var(--text-dim);
+        }
+
+        .widget-close:hover {
+            background: rgba(255, 59, 59, 0.1);
+            border-color: rgba(255, 59, 59, 0.4);
+            color: var(--red-alert);
+        }
+
+        .widget-reset {
+            background: rgba(255, 59, 59, 0.1);
+            border-color: rgba(255, 59, 59, 0.4);
+            color: var(--red-alert);
+            flex: 1;
+        }
+
+        .widget-reset:hover {
+            background: rgba(255, 59, 59, 0.2);
+            box-shadow: var(--red-glow);
+        }
+
+        .widget-content .card-inputs {
+            display: grid;
+            grid-template-columns: repeat(6, 44px);
+            gap: 4px;
+            justify-content: center;
+        }
+
+        .widget-content .card-input {
+            width: 44px;
+            height: 32px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: 400;
+            padding: 0;
+            box-sizing: border-box;
+            background: var(--bg-inset);
+            border: var(--border-dim);
+            color: var(--phosphor);
+            border-radius: 2px;
+            transition: .2s;
+            font-family: var(--font-display);
+            letter-spacing: 1px;
+        }
+
+        .widget-content .card-input:focus {
+            outline: none;
+            border-color: var(--phosphor);
+            box-shadow: var(--phosphor-soft);
+        }
+
+        .widget-content .card-input.disabled {
+            background: rgba(0, 0, 0, 0.4);
+            border-color: var(--text-off);
+            color: var(--text-off);
+            pointer-events: none;
+        }
+
+        .widget-content .card-input.highlight {
+            border-color: var(--phosphor);
+            background: rgba(0, 255, 136, 0.08);
+        }
+
+        .widget-content .results {
+            display: grid;
+            gap: 6px;
+        }
+
+        .widget-content .result-strip {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 6px;
+            padding: 6px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 3px;
+            border: var(--border-dim);
+        }
+
+        .widget-content .result-value {
+            font-size: 22px;
+            font-weight: 400;
+            text-align: center;
+            padding: 6px 0;
+            border-radius: 2px;
+            background: rgba(0, 0, 0, 0.3);
+            color: var(--text-mid);
+            font-family: var(--font-display);
+            letter-spacing: 2px;
+        }
+
+        .widget-content .result-player {
+            color: var(--cyan);
+            text-shadow: var(--cyan-glow);
+            background: rgba(0, 30, 40, 0.7);
+        }
+
+        .widget-content .result-banker {
+            color: var(--red-alert);
+            text-shadow: var(--red-glow);
+            background: rgba(40, 0, 0, 0.7);
+        }
+
+        .widget-content .result-outcome {
+            color: var(--text-mid);
+        }
+
+        .widget-content .result-value.win-B {
+            background: rgba(40, 0, 0, 0.8);
+            color: var(--red-alert);
+        }
+
+        .widget-content .result-value.win-P {
+            background: rgba(0, 30, 40, 0.8);
+            color: var(--cyan);
+        }
+
+        .widget-content .result-value.win-T {
+            background: rgba(0, 30, 10, 0.8);
+            color: var(--phosphor);
+        }
+
+        /* ── 回復分析 ── */
+        .recovery-display {
+            display: inline-flex;
+            flex-direction: row;
+            align-items: flex-start;
+            margin-left: 40px;
+            padding: 10px 15px;
+            background: var(--bg-panel);
+            border: var(--border-glow);
+            border-radius: 4px;
+            color: var(--text-bright);
+            font-family: var(--font-mono);
+            vertical-align: middle;
+            min-width: 550px;
+            box-shadow: var(--phosphor-soft);
+            gap: 15px;
+            z-index: 10;
+            position: relative;
+        }
+
+        .recovery-display .left-col {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            border-right: 1px solid rgba(0, 255, 136, 0.15);
+            padding-right: 15px;
+            min-width: 110px;
+            height: 100%;
+            align-self: center;
+        }
+
+        .recovery-display .right-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 5px 20px;
+            flex: 1;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .recovery-display .main-stat {
+            font-size: 22px;
+            font-weight: 400;
+            color: var(--phosphor);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            text-shadow: var(--phosphor-glow);
+            font-family: var(--font-display);
+            letter-spacing: 2px;
+        }
+
+        .recovery-display .rating-text {
+            font-size: 13px;
+            font-weight: 600;
+            margin-top: 4px;
+            color: var(--text-mid);
+            font-family: var(--font-label);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .recovery-display .sub-stat-row {
+            display: flex;
+            justify-content: space-between;
+            color: var(--text-dim);
+            border-bottom: 1px solid rgba(0, 255, 136, 0.07);
+            padding-bottom: 2px;
+        }
+
+        .recovery-display .sub-stat-label {
+            color: var(--text-dim);
+            font-weight: 500;
+            margin-right: 8px;
+            font-family: var(--font-label);
+            letter-spacing: 1px;
+            font-size: 11px;
+        }
+
+        .recovery-display .rating-stars {
+            color: var(--phosphor);
+            font-size: 14px;
+            margin-top: 4px;
+            text-shadow: var(--phosphor-soft);
+        }
+
+        .recovery-display.hidden {
+            display: none;
+        }
+
+        .recovery-content .suggestion {
+            color: var(--phosphor);
+            font-size: 13px;
+            margin-top: 5px;
+        }
+
+        /* ── 凍結網格 ── */
+        .frozen-grid-wrapper {
+            display: none;
+            margin-bottom: 10px;
+            padding: 8px;
+            background: rgba(0, 255, 136, 0.04);
+            border: var(--border-dim);
+            border-radius: 3px;
+            box-shadow: var(--phosphor-soft);
+        }
+
+        .frozen-grid-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--phosphor);
+            margin-bottom: 6px;
+            text-align: center;
+            letter-spacing: 3px;
+            font-family: var(--font-label);
+            text-transform: uppercase;
+        }
+
+        .grid-preview.frozen {
+            opacity: .9;
+            border: 1px dashed rgba(0, 255, 136, 0.2);
         }
     </style>
 </head>
@@ -737,10 +1869,10 @@
         <div class="top-controls">
             <!-- 花色選擇器 -->
             <div class="suit-selector">
-                <a class="suit-button" data-value="♠"><img src="suit/黑桃.png" alt="黑桃"></a>
-                <a class="suit-button" data-value="♥"><img src="suit/愛心.png" alt="愛心"></a>
-                <a class="suit-button" data-value="♦"><img src="suit/方塊.png" alt="方塊"></a>
-                <a class="suit-button" data-value="♣"><img src="suit/梅花.png" alt="梅花"></a>
+                <a class="suit-button" data-value="♠"><span class="suit-symbol">♠</span></a>
+                <a class="suit-button" data-value="♥"><span class="suit-symbol">♥</span></a>
+                <a class="suit-button" data-value="♦"><span class="suit-symbol">♦</span></a>
+                <a class="suit-button" data-value="♣"><span class="suit-symbol">♣</span></a>
             </div>
 
             <!-- 訊號張數（數字疊在卷軸圖片上） -->
@@ -751,15 +1883,8 @@
                 </div>
             </div>
 
-            <!-- 清空按鈕（卷軸圖片） -->
-            <button type="button" class="signal-clear-btn" onclick="clearSignalSelections()" aria-label="清除訊號牌">
-                <img src="suit/清除.png" alt="清除">
-            </button>
-
             <!-- GO 按鈕 -->
-            <button class="go-button" id="generateBtn">
-                <img src="suit/GO.png" alt="GO">
-            </button>
+            <button class="generate-stop-btn" id="generateBtn">生成</button>
             <button type="button" id="stopGenerateBtn" class="generate-stop-btn" disabled
                 onclick="stopGenerateShoe()">停止</button>
 
@@ -775,29 +1900,19 @@
                     <input type="number" id="range16Limit" class="recovery-input" min="0" placeholder="空白=不檢查">
                 </div>
                 <div class="recovery-input-item">
-                    <label class="recovery-input-label">莊/閒上限</label>
-                    <input type="number" id="maxSideLimit" class="recovery-input" min="0" value="46"
+                    <label class="recovery-input-label">莊閒差距</label>
+                    <input type="number" id="maxSideLimit" class="recovery-input" min="0" value="5"
                         placeholder="空白=不檢查">
                 </div>
                 <div class="recovery-input-item">
                     <label class="recovery-input-label">和局上限</label>
-                    <input type="number" id="maxTieLimit" class="recovery-input" min="0" value="4" placeholder="空白=不檢查">
+                    <input type="number" id="maxTieLimit" class="recovery-input" min="0" value="2" placeholder="空白=不檢查">
                 </div>
                 <div class="recovery-input-item">
                     <label class="recovery-input-label">4張局上限%</label>
                     <input type="number" id="maxFourCardRate" class="recovery-input" min="0" max="100" step="0.1"
-                        value="38.5" placeholder="空白=不檢查">
+                        value="40" placeholder="空白=不檢查">
                 </div>
-                <div class="recovery-input-item">
-                    <label class="recovery-input-label">範圍起(局)</label>
-                    <input type="number" id="recoveryWindowStart" class="recovery-input" min="1" placeholder="自動">
-                </div>
-                <div class="recovery-input-item">
-                    <label class="recovery-input-label">範圍迄(局)</label>
-                    <input type="number" id="recoveryWindowEnd" class="recovery-input" min="1" placeholder="自動">
-                </div>
-                <button type="button" id="btnOptimizeRecovery" class="recovery-optimize-btn">回復優化</button>
-                <button type="button" id="btnRollbackRecovery" class="recovery-rollback-btn" disabled>回滾</button>
             </div>
 
             <!-- 回復分析顯示區域 (取代原本的按鈕) -->
@@ -866,15 +1981,32 @@
 
             <!-- 右側工具區：圓餅圖 + 切牌 -->
             <div class="top-right-tools">
-                <!-- 圓餅圖（莊閒和統計） -->
-                <div class="result-circle" id="resultCircle">
-                    <!-- 莊閒和分布數字標籤 -->
-                    <div class="circle-segment-label banker" id="circleBankerLabel"></div>
-                    <div class="circle-segment-label player" id="circlePlayerLabel"></div>
-                    <div class="circle-segment-label tie" id="circleTieLabel"></div>
-                    <!-- 中心總局數 -->
-                    <div class="result-circle-center">
-                        <span id="circleTotal">0</span>
+                <!-- HUD 莊閒和統計條 -->
+                <div class="hud-bars" id="resultCircle">
+                    <div class="hud-bar-row">
+                        <span class="hud-bar-label hud-banker">莊</span>
+                        <div class="hud-bar-track">
+                            <div class="hud-bar-fill hud-banker-fill" id="hudBankerBar"></div>
+                        </div>
+                        <span class="hud-bar-value hud-banker" id="circleBankerLabel">0</span>
+                    </div>
+                    <div class="hud-bar-row">
+                        <span class="hud-bar-label hud-player">閒</span>
+                        <div class="hud-bar-track">
+                            <div class="hud-bar-fill hud-player-fill" id="hudPlayerBar"></div>
+                        </div>
+                        <span class="hud-bar-value hud-player" id="circlePlayerLabel">0</span>
+                    </div>
+                    <div class="hud-bar-row">
+                        <span class="hud-bar-label hud-tie">和</span>
+                        <div class="hud-bar-track">
+                            <div class="hud-bar-fill hud-tie-fill" id="hudTieBar"></div>
+                        </div>
+                        <span class="hud-bar-value hud-tie" id="circleTieLabel">0</span>
+                    </div>
+                    <div class="hud-total-row">
+                        <span class="hud-total-label">TOTAL</span>
+                        <span class="hud-total-value" id="circleTotal">0</span>
                     </div>
                 </div>
 
@@ -890,19 +2022,19 @@
 
         <!-- ===== 第二行：數字牌選擇（A 到 K） ===== -->
         <div class="rank-selector-row">
-            <a class="rank-button" data-value="A"><img src="nb/A.png" alt="A"></a>
-            <a class="rank-button" data-value="2"><img src="nb/2.png" alt="2"></a>
-            <a class="rank-button" data-value="3"><img src="nb/3.png" alt="3"></a>
-            <a class="rank-button" data-value="4"><img src="nb/4.png" alt="4"></a>
-            <a class="rank-button" data-value="5"><img src="nb/5.png" alt="5"></a>
-            <a class="rank-button" data-value="6"><img src="nb/6.png" alt="6"></a>
-            <a class="rank-button" data-value="7"><img src="nb/7.png" alt="7"></a>
-            <a class="rank-button" data-value="8"><img src="nb/8.png" alt="8"></a>
-            <a class="rank-button" data-value="9"><img src="nb/9.png" alt="9"></a>
-            <a class="rank-button" data-value="10"><img src="nb/10.png" alt="10"></a>
-            <a class="rank-button" data-value="J"><img src="nb/J.png" alt="J"></a>
-            <a class="rank-button" data-value="Q"><img src="nb/Q.png" alt="Q"></a>
-            <a class="rank-button" data-value="K"><img src="nb/K.png" alt="K"></a>
+            <a class="rank-button" data-value="A"><span class="rank-value">A</span></a>
+            <a class="rank-button" data-value="2"><span class="rank-value">2</span></a>
+            <a class="rank-button" data-value="3"><span class="rank-value">3</span></a>
+            <a class="rank-button" data-value="4"><span class="rank-value">4</span></a>
+            <a class="rank-button" data-value="5"><span class="rank-value">5</span></a>
+            <a class="rank-button" data-value="6"><span class="rank-value">6</span></a>
+            <a class="rank-button" data-value="7"><span class="rank-value">7</span></a>
+            <a class="rank-button" data-value="8"><span class="rank-value">8</span></a>
+            <a class="rank-button" data-value="9"><span class="rank-value">9</span></a>
+            <a class="rank-button" data-value="10"><span class="rank-value">10</span></a>
+            <a class="rank-button" data-value="J"><span class="rank-value">J</span></a>
+            <a class="rank-button" data-value="Q"><span class="rank-value">Q</span></a>
+            <a class="rank-button" data-value="K"><span class="rank-value">K</span></a>
 
             <!-- 違規統計區域 -->
             <div class="violation-stats">
@@ -915,7 +2047,7 @@
                     <div class="violation-detail" id="fourCardViolationDetail">無</div>
                 </div>
                 <div class="violation-card">
-                    <div class="violation-label">連續7局莊閒</div>
+                    <div class="violation-label">連續5局莊閒</div>
                     <div class="violation-detail" id="streakViolationDetail">無</div>
                 </div>
                 <div class="violation-card">
@@ -1058,34 +2190,6 @@
             });
         });
 
-        // ========== 圓餅圖中心數字隱藏邏輯 ==========
-        function updateCircleCenterVisibility() {
-            const circleTotal = document.getElementById('circleTotal');
-            const circleCenter = document.querySelector('.result-circle-center');
-            if (circleTotal && circleCenter) {
-                const totalValue = parseInt(circleTotal.textContent) || 0;
-                if (totalValue === 0) {
-                    circleCenter.classList.add('hidden');
-                } else {
-                    circleCenter.classList.remove('hidden');
-                }
-            }
-        }
-
-        // 初始化檢查
-        updateCircleCenterVisibility();
-
-        // 監聽數字變化
-        const circleTotal = document.getElementById('circleTotal');
-        if (circleTotal) {
-            const observer = new MutationObserver(updateCircleCenterVisibility);
-            observer.observe(circleTotal, {
-                childList: true,
-                characterData: true,
-                subtree: true
-            });
-        }
-
         // ========== 違規統計初始化 ==========
         document.addEventListener('DOMContentLoaded', function () {
             const violationCards = document.querySelectorAll('.violation-card');
@@ -1106,6 +2210,12 @@
     <script src="swap_preview.js"></script>
     <script src="traverse.js"></script>
     <script src="auto_fix_plugin.js"></script>
+
+    <!-- 生成中遮罩 -->
+    <div class="generating-overlay" id="generatingOverlay">
+        <div class="generating-spinner"></div>
+        <div class="generating-text" id="generatingText">生成中...</div>
+    </div>
 </body>
 
 </html>

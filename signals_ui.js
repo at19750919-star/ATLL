@@ -446,11 +446,11 @@ function runAutoColorSwapFromUI() {
     log('正在計算自動換牌預覽...', 'info');
     
     try {
-        // 儲存原始狀態
-        const originalRounds = JSON.parse(JSON.stringify(currentRounds));
-        
+        // 儲存原始狀態（使用 deepCloneRounds 保留 Card 原型）
+        const originalRounds = deepCloneRounds(currentRounds);
+
         // 執行自動換牌（在副本上）
-        const previewRounds = runAutoColorSwap_Signal(JSON.parse(JSON.stringify(currentRounds)));
+        const previewRounds = runAutoColorSwap_Signal(deepCloneRounds(currentRounds));
         
         // 顯示預覽對話框
         showAutoSwapPreview(originalRounds, previewRounds);
@@ -1043,10 +1043,7 @@ function pack_all_sensitive_and_segment(deck) {
         log('⚠️ 找不到 applyTSignalLogic，無法在生成階段處理 T 局。', 'warn');
     }
 
-    // 生成完畢後再做一次安全檢查，確保 A 段沒有違規局
-    if (typeof ensureNoBannedBankerSixRound === 'function') {
-        ensureNoBannedBankerSixRound(final_rounds, 'A');
-    }
+    // 莊6閒≤5 不再於生成階段強制重來，改由最終驗證提示
 
     // 取得所有卡牌
     const final_card_deck = final_rounds.flatMap(r => r.cards);
@@ -1125,58 +1122,7 @@ function applyTSignalLogic(rounds, a_rounds, used_pos, tail_cards) {
         log(`🔍 拆掉 ${fullHouseTieRemoved} 局「三條+和局」`, 'warn');
     }
     
-    // ===== 階段 2：掃描並拆除違規的莊 6 點 / 5 或 6 張牌局 =====
-    const isBankerSixWin = (round) => {
-        if (!round) return false;
-        if (typeof computeRoundHands !== 'function') return false;
-        const handInfo = computeRoundHands(round.cards || []);
-        if (!handInfo) return false;
-        const playerTotal = handInfo.playerTotal;
-        return handInfo.bankerTotal === 6 && typeof playerTotal === 'number' && playerTotal <= 5;
-    };
-
-    const describeRoundLocation = (round, idx) => {
-        const displayIdx = (round && typeof round.display_index === 'number')
-            ? round.display_index
-            : (idx + 1);
-        return `第${displayIdx}局`;
-    };
-
-    const scanBankerSixMatches = () => {
-        const matches = [];
-        for (let i = 0; i < a_rounds.length; i++) {
-            const round = a_rounds[i];
-            if (isBankerSixWin(round)) {
-                matches.push({ index: i, round, label: describeRoundLocation(round, i) });
-            }
-        }
-        return matches;
-    };
-
-    const removeBankerSixMatches = (matches) => {
-        const sorted = matches.slice().sort((a, b) => b.index - a.index);
-        const removed = [];
-        for (const match of sorted) {
-            const removedRound = removeRoundByIndex(match.index);
-            if (removedRound) {
-                removed.push({ match, removedRound });
-            }
-        }
-        return removed;
-    };
-
-    const handleBankerSixPass = (label) => {
-        const matches = scanBankerSixMatches();
-        const locationList = matches.map(m => m.label).join('、') || '無';
-        log(`${label} 掃描莊家6點${matches.length ? `：共 ${matches.length} 局 (${locationList})` : '：無符合條件'}`, 'info');
-        if (!matches.length) return [];
-        const removed = removeBankerSixMatches(matches);
-        const removedList = removed.map(item => item.match.label).join('、') || '無';
-        log(`${label} 拆掉 ${removed.length} 局莊家6點${removed.length ? ` (${removedList})` : ''}`, removed.length ? 'warn' : 'info');
-        return removed;
-    };
-
-    handleBankerSixPass('🔍');
+    // 莊6閒≤5 不再於 T 局處理階段拆局，改由最終驗證提示
     
     // ===== 階段 2.5：清理連續的和局或三條 =====
     log('🔍 開始清理連續和局/三條', 'info');
@@ -1330,14 +1276,6 @@ function applyTSignalLogic(rounds, a_rounds, used_pos, tail_cards) {
 
     let tailCards = recycleAndCollect('和局平衡重洗');
     
-    const extraBankerSixRemoved = handleBankerSixPass('🔍 再次重洗');
-    if (extraBankerSixRemoved.length > 0) {
-        tailCards = recycleAndCollect('和局平衡重洗（再補）');
-        const finalBankerSixRemoved = handleBankerSixPass('🔍 最終檢查');
-        if (finalBankerSixRemoved.length > 0) {
-            log(`⚠️ 最終仍拆掉 ${finalBankerSixRemoved.length} 局莊家6點，暫不再重洗`, 'warn');
-        }
-    }
     let tailRound = null;
     if (tailCards.length > 0) {
         const sortedTail = tailCards.slice().sort((a, b) => a.pos - b.pos);
@@ -1457,7 +1395,7 @@ function recycleRemovedRounds(removedRounds, initialTailCards, targetRounds, use
     }
 
     if (added > 0) {
-        log(`🔁 ${label}：從拆除牌重新洗出 ${added} 局`, 'info');
+        sLog(`🔁 ${label}：從拆除牌重新洗出 ${added} 局`);
     }
     if (poolCards.length >= MULTI_PASS_MIN_CARDS) {
         log(`⚠️ ${label}：剩餘 ${poolCards.length} 張牌仍無法組成敏感局，將直接作為殘牌`, 'warn');
@@ -1709,109 +1647,6 @@ if (typeof window !== 'undefined') {
             if (applyConfigBtn) applyConfigBtn.addEventListener('click', ui.applySignalConfig);
             initSwapPreviewToggle();
 
-            const optimizeBtn = document.getElementById('btnOptimizeRecovery');
-            const rollbackBtn = document.getElementById('btnRollbackRecovery');
-            if (rollbackBtn) {
-                rollbackBtn.disabled = true;
-                rollbackBtn.addEventListener('click', async () => {
-                    if (typeof window.rollbackRecoveryOptimization !== 'function') {
-                        log('❌ 回滾功能尚未就緒（rollbackRecoveryOptimization 不存在）', 'error');
-                        return;
-                    }
-                    try {
-                        const ok = await window.rollbackRecoveryOptimization();
-                        if (ok) {
-                            log('🔍 ✅ 已回滾上一個回復優化結果', 'success');
-                            rollbackBtn.disabled = true;
-                        } else {
-                            log('🔍 ⚠️ 沒有可回滾的回復優化結果', 'warn');
-                        }
-                    } catch (e) {
-                        const msg = e && e.message ? e.message : e;
-                        log(`回滾失敗:${msg}`, 'error');
-                        console.error(e);
-                    }
-                });
-            }
-            if (optimizeBtn) {
-                optimizeBtn.addEventListener('click', async (event) => {
-                    optimizeBtn.disabled = true;
-                    const originalText = optimizeBtn.textContent;
-                    optimizeBtn.textContent = '優化中…';
-
-                    log('🔍 ✅ 回復優化開始', 'info');
-                    const forceApply = Boolean(event && event.shiftKey);
-                    if (forceApply) {
-                        log('🔍 ⚠️ 已啟用強制套用（Shift）', 'warn');
-                    }
-
-                    if (typeof window.optimizeRecoveryAroundWorstCut !== 'function') {
-                        log('❌ 回復優化功能尚未就緒（optimizeRecoveryAroundWorstCut 不存在）', 'error');
-                        optimizeBtn.disabled = false;
-                        optimizeBtn.textContent = originalText;
-                        return;
-                    }
-                    const avgLimitEl = document.getElementById('avgRecoveryLimit');
-                    const range16El = document.getElementById('range16Limit');
-                    const windowStartEl = document.getElementById('recoveryWindowStart');
-                    const windowEndEl = document.getElementById('recoveryWindowEnd');
-                    const targetAvgRaw = avgLimitEl ? Number(avgLimitEl.value) : NaN;
-                    const targetAvg = (Number.isFinite(targetAvgRaw) && targetAvgRaw > 0) ? targetAvgRaw : null;
-                    const range16Raw = range16El && String(range16El.value || '').trim() !== '' ? Number(range16El.value) : NaN;
-                    const range16Limit = (Number.isFinite(range16Raw) && range16Raw >= 0) ? range16Raw : null;
-
-                    const startStr = windowStartEl ? String(windowStartEl.value || '').trim() : '';
-                    const endStr = windowEndEl ? String(windowEndEl.value || '').trim() : '';
-                    let windowStartRound = null;
-                    let windowEndRound = null;
-                    if (startStr !== '' || endStr !== '') {
-                        if (startStr === '' || endStr === '') {
-                            log('❌ 手動範圍請同時填「範圍起(局)」與「範圍迄(局)」', 'error');
-                            optimizeBtn.disabled = false;
-                            optimizeBtn.textContent = originalText;
-                            return;
-                        }
-                        windowStartRound = parseInt(startStr, 10);
-                        windowEndRound = parseInt(endStr, 10);
-                        const n = Array.isArray(currentRounds) ? currentRounds.length : 0;
-                        if (!Number.isFinite(windowStartRound) || !Number.isFinite(windowEndRound) || windowStartRound < 1 || windowEndRound < 1 || windowStartRound > n || windowEndRound > n) {
-                            log(`❌ 手動範圍超出目前局數（1~${n}）`, 'error');
-                            optimizeBtn.disabled = false;
-                            optimizeBtn.textContent = originalText;
-                            return;
-                        }
-                        log(`🔍 ✅ 使用手動範圍：第 ${windowStartRound} 局 ~ 第 ${windowEndRound} 局`, 'info');
-                    }
-
-                    try {
-                        const result = await window.optimizeRecoveryAroundWorstCut({
-                            targetAvg: targetAvg == null ? undefined : targetAvg,
-                            range16Limit: range16Limit == null ? undefined : range16Limit,
-                            forceApply,
-                            windowStartRound: windowStartRound == null ? undefined : windowStartRound,
-                            windowEndRound: windowEndRound == null ? undefined : windowEndRound
-                        });
-                        if (result && result.ok) {
-                            if (result.applied) {
-                                if (result.improved) log('🔍 ✅ 回復優化完成（已套用且改善）', 'success');
-                                else log('🔍 ⚠️ 回復優化完成（已套用但未改善）', 'warn');
-                                if (rollbackBtn) rollbackBtn.disabled = false;
-                            } else {
-                                log('🔍 ⚠️ 回復優化完成（未套用／未改動）', 'warn');
-                            }
-                        } else {
-                            log('❌ 回復優化失敗（未完成）', 'error');
-                        }
-                    } catch (e) {
-                        const msg = e && e.message ? e.message : e;
-                        log(`回復優化失敗:${msg}`, 'error');
-                        console.error(e);
-                    } finally {
-                        optimizeBtn.disabled = false;
-                        optimizeBtn.textContent = originalText;
-                    }
-                });
-            }
         const autoBtn = document.getElementById('btnAutoColor');
         if (autoBtn) autoBtn.addEventListener('click', ui.runAutoColorSwap);
         const autoReorderBtn = document.getElementById('btnAutoReorder');
@@ -2330,8 +2165,9 @@ function shouldDisplayLogMessage(message, type = 'info') {
 
 // 中央日誌輸出，會篩選後才寫入畫面
 function log(message, type = 'info') {
+    if (window.__muteLog) return;
     if (!shouldDisplayLogMessage(message, type)) return;
-    
+
     const logArea = document.getElementById('logArea');
     const timestamp = new Date().toLocaleTimeString();
     if (logArea) {
@@ -2381,97 +2217,25 @@ function updateStats(data) {
 }
 
 function updateResultCircle({ totalRounds, bankerCount, playerCount, tieCount }) {
-    const circle = document.getElementById('resultCircle');
-    const circleBanker = document.getElementById('circleBankerCount');
-    const circlePlayer = document.getElementById('circlePlayerCount');
-    const circleTie = document.getElementById('circleTieCount');
     const circleBankerLabel = document.getElementById('circleBankerLabel');
     const circlePlayerLabel = document.getElementById('circlePlayerLabel');
     const circleTieLabel = document.getElementById('circleTieLabel');
     const circleTotal = document.getElementById('circleTotal');
+    const hudBankerBar = document.getElementById('hudBankerBar');
+    const hudPlayerBar = document.getElementById('hudPlayerBar');
+    const hudTieBar = document.getElementById('hudTieBar');
 
     if (circleTotal) {
-        circleTotal.textContent = totalRounds > 0 ? totalRounds : '';
+        circleTotal.textContent = totalRounds > 0 ? totalRounds : '0';
     }
-    if (circleBanker) {
-        circleBanker.textContent = bankerCount;
-    }
-    if (circlePlayer) {
-        circlePlayer.textContent = playerCount;
-    }
-    if (circleTie) {
-        circleTie.textContent = tieCount;
-    }
-    if (circleBankerLabel) {
-        circleBankerLabel.textContent = bankerCount;
-    }
-    if (circlePlayerLabel) {
-        circlePlayerLabel.textContent = playerCount;
-    }
-    if (circleTieLabel) {
-        circleTieLabel.textContent = tieCount;
-    }
+    if (circleBankerLabel) circleBankerLabel.textContent = bankerCount;
+    if (circlePlayerLabel) circlePlayerLabel.textContent = playerCount;
+    if (circleTieLabel) circleTieLabel.textContent = tieCount;
 
-    if (!circle) return;
-    const total = bankerCount + playerCount + tieCount;
-    const showCircleCenter = Boolean(totalRounds);
-    circle.classList.toggle('result-circle--empty', !showCircleCenter);
-    if (!total) {
-        circle.style.backgroundImage = 'linear-gradient(180deg,#0e1420,#0e1420)';
-        return;
-    }
-
-    const docStyles = window ? getComputedStyle(document.documentElement) : null;
-    const bankerColor = docStyles ? docStyles.getPropertyValue('--shuiro')?.trim() : '#fdecea';
-    const playerColor = docStyles ? docStyles.getPropertyValue('--ai')?.trim() : '#e3f2fd';
-    const tieColor = docStyles ? docStyles.getPropertyValue('--kincha')?.trim() : '#e8f5e9';
-    const segments = [
-        { value: bankerCount, color: bankerColor || '#fdecea' },
-        { value: playerCount, color: playerColor || '#e3f2fd' },
-        { value: tieCount, color: tieColor || '#e8f5e9' }
-    ];
-    let start = 0;
-    const stops = [];
-    const positions = [];
-    segments.forEach(seg => {
-        if (!seg.value) return;
-        const span = (seg.value / total) * 360;
-        const end = start + span;
-        const middle = start + span / 2;
-        stops.push(`${seg.color} ${start}deg ${end}deg`);
-        positions.push(middle);
-        start = end;
-    });
-    circle.style.backgroundImage = `conic-gradient(${stops.join(', ')})`;
-    
-    const radius = 32;
-    
-    if (circleBankerLabel && positions[0] !== undefined) {
-        const angle = (positions[0] - 90) * Math.PI / 180;
-        const x = 50 + radius * Math.cos(angle);
-        const y = 50 + radius * Math.sin(angle);
-        circleBankerLabel.style.left = `${x}%`;
-        circleBankerLabel.style.top = `${y}%`;
-        circleBankerLabel.style.transform = 'translate(-50%, -50%)';
-    }
-    
-    if (circlePlayerLabel && positions[1] !== undefined) {
-        const angle = (positions[1] - 90) * Math.PI / 180;
-        const x = 50 + radius * Math.cos(angle);
-        const y = 50 + radius * Math.sin(angle);
-        circlePlayerLabel.style.left = `${x}%`;
-        circlePlayerLabel.style.top = `${y}%`;
-        circlePlayerLabel.style.transform = 'translate(-50%, -50%)';
-    }
-    
-    if (circleTieLabel && positions[2] !== undefined) {
-        const angle = (positions[2] - 90) * Math.PI / 180;
-        const x = 50 + radius * Math.cos(angle);
-        const y = 50 + radius * Math.sin(angle);
-        circleTieLabel.style.left = `${x}%`;
-        circleTieLabel.style.top = `${y}%`;
-        circleTieLabel.style.transform = 'translate(-50%, -50%)';
-    }
+    const maxCount = Math.max(bankerCount, playerCount, tieCount, 1);
+    if (hudBankerBar) hudBankerBar.style.width = `${(bankerCount / maxCount) * 100}%`;
+    if (hudPlayerBar) hudPlayerBar.style.width = `${(playerCount / maxCount) * 100}%`;
+    if (hudTieBar) hudTieBar.style.width = `${(tieCount / maxCount) * 100}%`;
 }
 
 // 將一局的卡片轉成「A♠ ...」的字串備用

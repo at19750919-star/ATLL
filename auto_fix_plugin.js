@@ -15,7 +15,7 @@
     // ========== 設定 ==========
     const CONFIG = {
         maxRetries: 15,           // 最多嘗試幾輪修正
-        avgRecoveryLimit: 3.5,    // 平均回復上限（原本是4，改成3.5）
+        avgRecoveryLimit: 0,      // 平均回復上限（0=關閉）
         autoUpdateInput: true     // 是否自動更新輸入框的值
     };
 
