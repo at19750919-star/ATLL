@@ -267,6 +267,44 @@
         background-size: var(--grid-col-step) 100%;
         background-repeat: repeat;
       }
+      /* 全螢幕網格模式 */
+      .grid-fullscreen-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 99999;
+        background: #0f172a;
+        flex-direction: column;
+      }
+      .grid-fullscreen-overlay.show {
+        display: flex;
+      }
+      .grid-fullscreen-overlay .fullscreen-topbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 6px 12px;
+        background: rgba(30, 41, 59, 0.9);
+        flex-shrink: 0;
+      }
+      .grid-fullscreen-overlay .fullscreen-topbar .fs-title {
+        color: #94a3b8;
+        font-size: 14px;
+      }
+      .grid-fullscreen-overlay .fullscreen-close-btn {
+        background: #ef4444;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 6px 16px;
+        font-size: 16px;
+        cursor: pointer;
+      }
+      .grid-fullscreen-overlay .fullscreen-grid-wrap {
+        flex: 1;
+        overflow: auto;
+        padding: 4px;
+      }
       .grid-cell {
         border-radius: 6px;
         background-color: rgba(240, 240, 240, 0.08);
@@ -1357,6 +1395,9 @@
                 <input type="number" id="gridColsInput" value="15" min="5" max="30"
                   style="width:55px;min-width:55px;padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(30,41,59,0.7);color:white;text-align:center">
                 <button id="gridColsApplyBtn">套用</button>
+              </div>
+              <div class="grid-search">
+                <button id="gridFullscreenBtn" title="全螢幕網格" style="font-size:18px;padding:4px 12px">⛶</button>
               </div>
             </div>
           </div>
@@ -3728,6 +3769,77 @@
           }
         };
       });
+    </script>
+
+    <!-- 全螢幕網格覆蓋層 -->
+    <div id="gridFullscreenOverlay" class="grid-fullscreen-overlay">
+      <div class="fullscreen-topbar">
+        <span class="fs-title" id="fsGridTitle"></span>
+        <button class="fullscreen-close-btn" id="fsCloseBtn">✕ 關閉</button>
+      </div>
+      <div class="fullscreen-grid-wrap" id="fsGridWrap"></div>
+    </div>
+
+    <script>
+    (function() {
+      const fsOverlay = document.getElementById("gridFullscreenOverlay");
+      const fsGridWrap = document.getElementById("fsGridWrap");
+      const fsCloseBtn = document.getElementById("fsCloseBtn");
+      const fsTitle = document.getElementById("fsGridTitle");
+      const openBtn = document.getElementById("gridFullscreenBtn");
+      const srcGrid = document.getElementById("grid-preview");
+      const srcScroll = document.getElementById("grid-scroll-container");
+
+      if (!openBtn || !fsOverlay) return;
+
+      openBtn.addEventListener("click", () => {
+        if (!srcGrid || !srcGrid.children.length) return;
+        // 複製整個 grid 到全螢幕
+        const clone = srcGrid.cloneNode(true);
+        clone.id = "fs-grid-clone";
+        fsGridWrap.innerHTML = "";
+        fsGridWrap.appendChild(clone);
+
+        // 設定標題（目前檔名）
+        const fnSpan = document.getElementById("current-file-name");
+        fsTitle.textContent = fnSpan ? fnSpan.textContent : "";
+
+        // 計算全螢幕下的格子大小（去掉上方 bar 約 40px）
+        const availW = window.innerWidth - 8;
+        const availH = window.innerHeight - 48;
+        const style = getComputedStyle(srcGrid);
+        const cols = parseInt(style.getPropertyValue("--grid-cols")) || 16;
+        const colGap = 2;
+        const rowGap = 6;
+        const cellFromW = Math.floor((availW - (cols - 1) * colGap) / cols);
+        // 計算總行數
+        const totalCells = clone.children.length;
+        const labelCells = clone.querySelectorAll(".grid-row-label").length;
+        const dataCells = totalCells - labelCells;
+        const dataCols = cols - 1;
+        const rows = Math.ceil(dataCells / dataCols);
+        const cellFromH = rows > 0 ? Math.floor((availH - (rows - 1) * rowGap) / rows) : 999;
+        const cellSize = Math.max(20, Math.min(cellFromW, cellFromH));
+        clone.style.setProperty("--grid-row-size", cellSize + "px");
+
+        fsOverlay.classList.add("show");
+        document.body.style.overflow = "hidden";
+      });
+
+      function closeFs() {
+        fsOverlay.classList.remove("show");
+        fsGridWrap.innerHTML = "";
+        document.body.style.overflow = "";
+      }
+
+      fsCloseBtn.addEventListener("click", closeFs);
+      fsOverlay.addEventListener("click", (e) => {
+        if (e.target === fsOverlay) closeFs();
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && fsOverlay.classList.contains("show")) closeFs();
+      });
+    })();
     </script>
   </body>
 </html>
