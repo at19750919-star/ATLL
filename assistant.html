@@ -304,11 +304,9 @@
       }
       .grid-fullscreen-overlay .fullscreen-grid-wrap {
         flex: 1;
-        overflow: auto;
-        padding: 2px;
-        display: flex;
-        align-items: flex-start;
-        justify-content: center;
+        overflow-x: hidden;
+        overflow-y: auto;
+        padding: 0 2px;
       }
       @media (max-width: 768px) {
         .grid-fullscreen-overlay .fullscreen-topbar {
@@ -3930,21 +3928,11 @@
         const fsCols = 16;
         clone.style.setProperty("--grid-cols", fsCols);
 
-        // 計算全螢幕下的格子大小，寬高都要 fit
-        const topBarH = 36;
-        const padV = 8;
-        const availW = window.innerWidth - 8;
-        const availH = window.innerHeight - topBarH - padV;
+        // 寬度佔滿，高度按比例（正方形格子），可垂直捲動
+        const availW = window.innerWidth - 4;
         const colGap = 2;
-        const rowGap = 6;
-        // 總 grid 行數 = label 行數（每個 label 佔一行）
-        const labelCount = clone.querySelectorAll(".grid-row-label").length;
-        const gridRows = labelCount; // 每個 label 代表一行資料
-        const cellFromW = Math.floor((availW - (fsCols - 1) * colGap) / fsCols);
-        const cellFromH = gridRows > 0 ? Math.floor((availH - (gridRows - 1) * rowGap) / gridRows) : 999;
-        const cellSize = Math.max(12, Math.min(cellFromW, cellFromH));
+        const cellSize = Math.floor((availW - (fsCols - 1) * colGap) / fsCols);
         clone.style.setProperty("--grid-row-size", cellSize + "px");
-        clone.style.setProperty("--grid-row-gap", Math.min(rowGap, Math.max(1, Math.floor(cellSize * 0.08))) + "px");
 
         fsOverlay.classList.add("show");
         document.body.style.overflow = "hidden";
