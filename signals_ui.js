@@ -1831,6 +1831,60 @@ if (typeof window !== 'undefined') {
 
             const exportCombinedBtn = document.getElementById('btnExportCombined');
             exportCombinedBtn.addEventListener('click', exportRoundsAsExcelWithDrive);
+
+            const importBtn = document.getElementById('btnImport');
+            const importFileInput = document.getElementById('importFileInput');
+            if (importBtn && importFileInput) {
+                importBtn.addEventListener('click', () => {
+                    // 移除舊選單
+                    const old = document.getElementById('importMenu');
+                    if (old) { old.remove(); return; }
+
+                    const menu = document.createElement('div');
+                    menu.id = 'importMenu';
+                    menu.style.cssText = 'position:absolute;z-index:9999;background:#1a1a2e;border:1px solid #444;border-radius:6px;padding:4px;display:flex;flex-direction:column;gap:2px;box-shadow:0 4px 12px rgba(0,0,0,0.5);';
+
+                    const btnLocal = document.createElement('button');
+                    btnLocal.textContent = '本機檔案';
+                    btnLocal.style.cssText = 'padding:8px 18px;background:#2a2a4a;color:#eee;border:none;border-radius:4px;cursor:pointer;font-size:14px;';
+                    btnLocal.onmouseenter = () => btnLocal.style.background = '#3a3a6a';
+                    btnLocal.onmouseleave = () => btnLocal.style.background = '#2a2a4a';
+                    btnLocal.onclick = () => { menu.remove(); importFileInput.click(); };
+
+                    const btnCloud = document.createElement('button');
+                    btnCloud.textContent = 'Google 雲端';
+                    btnCloud.style.cssText = 'padding:8px 18px;background:#2a2a4a;color:#eee;border:none;border-radius:4px;cursor:pointer;font-size:14px;';
+                    btnCloud.onmouseenter = () => btnCloud.style.background = '#3a3a6a';
+                    btnCloud.onmouseleave = () => btnCloud.style.background = '#2a2a4a';
+                    btnCloud.onclick = () => { menu.remove(); loadFromGoogleDrive(); };
+
+                    menu.appendChild(btnLocal);
+                    menu.appendChild(btnCloud);
+
+                    // 定位在按鈕旁邊
+                    const rect = importBtn.getBoundingClientRect();
+                    menu.style.left = (rect.right + 4) + 'px';
+                    menu.style.top = rect.top + 'px';
+                    document.body.appendChild(menu);
+
+                    // 點其他地方關閉
+                    setTimeout(() => {
+                        document.addEventListener('click', function closeMenu(e) {
+                            if (!menu.contains(e.target) && e.target !== importBtn) {
+                                menu.remove();
+                                document.removeEventListener('click', closeMenu);
+                            }
+                        });
+                    }, 0);
+                });
+                importFileInput.addEventListener('change', async (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    await importRoundsFromExcel(file);
+                    importFileInput.value = '';
+                });
+            }
+
             const validateBtn = document.getElementById('btnValidate');
             if (validateBtn) validateBtn.addEventListener('click', () => {
                 window.open('validator.html', '_blank');
