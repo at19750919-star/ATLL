@@ -1,0 +1,3 @@
+[      65ms] [ERROR] Failed to load resource: the server responded with a status of 404 (File not found) @ http://localhost:8765/favicon.ico:0
+[  279625ms] [ERROR] [語音] 第一個數字 "4" onerror: interrupted @ http://localhost:8765/assistant.html:2549
+[  279930ms] [ERROR] [語音] 第一個數字 "4" onerror: interrupted @ http://localhost:8765/assistant.html:2549

@@ -1,0 +1,183 @@
+Total messages: 181 (Errors: 0, Warnings: 0)
+
+[LOG] === 回復分析結果 === @ http://localhost:8765/signals.js:4929
+[LOG] 總切牌點: 416 @ http://localhost:8765/signals.js:4930
+[LOG] 平均消耗: 21.6 張 / 4.5 局 @ http://localhost:8765/signals.js:4931
+[LOG] 最大消耗: 98 張 / 21 局 (第 33 張) @ http://localhost:8765/signals.js:4932
+[LOG] 立即回復: 89 個 ( 21.4 %) @ http://localhost:8765/signals.js:4933
+[LOG] === 分佈統計 === @ http://localhost:8765/signals.js:4934
+[LOG] 立即回復 (0局): 89 @ http://localhost:8765/signals.js:4935
+[LOG] 1~5 局: 193 @ http://localhost:8765/signals.js:4936
+[LOG] 6~10 局: 87 @ http://localhost:8765/signals.js:4937
+[LOG] 11~15 局: 35 @ http://localhost:8765/signals.js:4938
+[LOG] 16 局以上: 12 @ http://localhost:8765/signals.js:4939
+[LOG] [INFO] 🔍 檢測到：莊=48、閒=37、和=4、差距=7、4張=48/89 (53.9%)（莊閒差距上限=5，和局上限=2，4張局上限=40%） @ http://localhost:8765/signals_ui.js:2179
+[LOG] [WARN] 🔍 ⚠️ 莊閒差距超標（莊=48 vs 閒+和=41，差距=7 > 5），重新生成... @ http://localhost:8765/signals_ui.js:2179
+[LOG] [WARN] 🔍 ⚠️ 和局超過上限（和=4 > 2），重新生成... @ http://localhost:8765/signals_ui.js:2179
+[LOG] [WARN] 🔍 ⚠️ 4張局比例超過上限（53.9% > 40%），重新生成... @ http://localhost:8765/signals_ui.js:2179
+[LOG] [INFO] ⚙️ [殘牌處理] 開始分配 2 張殘牌 @ http://localhost:8765/signals_ui.js:2179
+[LOG] 牌靴總共 416 張牌，90 局 @ http://localhost:8765/signals.js:4815
+[LOG] === 回復分析結果 === @ http://localhost:8765/signals.js:4929
+[LOG] 總切牌點: 416 @ http://localhost:8765/signals.js:4930
+[LOG] 平均消耗: 22.4 張 / 4.5 局 @ http://localhost:8765/signals.js:4931
+[LOG] 最大消耗: 114 張 / 24 局 (第 29 張) @ http://localhost:8765/signals.js:4932
+[LOG] 立即回復: 90 個 ( 21.6 %) @ http://localhost:8765/signals.js:4933
+[LOG] === 分佈統計 === @ http://localhost:8765/signals.js:4934
+[LOG] 立即回復 (0局): 90 @ http://localhost:8765/signals.js:4935
+[LOG] 1~5 局: 199 @ http://localhost:8765/signals.js:4936
+[LOG] 6~10 局: 72 @ http://localhost:8765/signals.js:4937
+[LOG] 11~15 局: 36 @ http://localhost:8765/signals.js:4938
+[LOG] 16 局以上: 19 @ http://localhost:8765/signals.js:4939
+[LOG] [INFO] 🔍 檢測到：莊=52、閒=34、和=4、差距=14、4張=48/90 (53.3%)（莊閒差距上限=5，和局上限=2，4張局上限=40%） @ http://localhost:8765/signals_ui.js:2179
+[LOG] [WARN] 🔍 ⚠️ 莊閒差距超標（莊=52 vs 閒+和=38，差距=14 > 5），重新生成... @ http://localhost:8765/signals_ui.js:2179
+[LOG] [WARN] 🔍 ⚠️ 和局超過上限（和=4 > 2），重新生成... @ http://localhost:8765/signals_ui.js:2179
+[LOG] [WARN] 🔍 ⚠️ 4張局比例超過上限（53.3% > 40%），重新生成... @ http://localhost:8765/signals_ui.js:2179
+[LOG] [INFO] ⚙️ [殘牌處理] 開始分配 3 張殘牌 @ http://localhost:8765/signals_ui.js:2179
+[LOG] 牌靴總共 416 張牌，85 局 @ http://localhost:8765/signals.js:4815
+[LOG] === 回復分析結果 === @ http://localhost:8765/signals.js:4929
+[LOG] 總切牌點: 416 @ http://localhost:8765/signals.js:4930
+[LOG] 平均消耗: 39.5 張 / 7.7 局 @ http://localhost:8765/signals.js:4931
+[LOG] 最大消耗: 211 張 / 41 局 (第 309 張) @ http://localhost:8765/signals.js:4932
+[LOG] 立即回復: 85 個 ( 20.4 %) @ http://localhost:8765/signals.js:4933
+[LOG] === 分佈統計 === @ http://localhost:8765/signals.js:4934
+[LOG] 立即回復 (0局): 85 @ http://localhost:8765/signals.js:4935
+[LOG] 1~5 局: 157 @ http://localhost:8765/signals.js:4936
+[LOG] 6~10 局: 89 @ http://localhost:8765/signals.js:4937
+[LOG] 11~15 局: 20 @ http://localhost:8765/signals.js:4938
+[LOG] 16 局以上: 65 @ http://localhost:8765/signals.js:4939
+[LOG] [INFO] 🔍 檢測到：莊=46、閒=35、和=4、差距=7、4張=31/85 (36.5%)（莊閒差距上限=5，和局上限=2，4張局上限=40%） @ http://localhost:8765/signals_ui.js:2179
+[LOG] [WARN] 🔍 ⚠️ 莊閒差距超標（莊=46 vs 閒+和=39，差距=7 > 5），重新生成... @ http://localhost:8765/signals_ui.js:2179
+[LOG] [WARN] 🔍 ⚠️ 和局超過上限（和=4 > 2），重新生成... @ http://localhost:8765/signals_ui.js:2179
+[LOG] [INFO] ⚙️ [殘牌處理] 開始分配 1 張殘牌 @ http://localhost:8765/signals_ui.js:2179
+[LOG] 牌靴總共 416 張牌，89 局 @ http://localhost:8765/signals.js:4815
+[LOG] === 回復分析結果 === @ http://localhost:8765/signals.js:4929
+[LOG] 總切牌點: 416 @ http://localhost:8765/signals.js:4930
+[LOG] 平均消耗: 27.3 張 / 5.4 局 @ http://localhost:8765/signals.js:4931
+[LOG] 最大消耗: 120 張 / 24 局 (第 55 張) @ http://localhost:8765/signals.js:4932
+[LOG] 立即回復: 89 個 ( 21.4 %) @ http://localhost:8765/signals.js:4933
+[LOG] === 分佈統計 === @ http://localhost:8765/signals.js:4934
+[LOG] 立即回復 (0局): 89 @ http://localhost:8765/signals.js:4935
+[LOG] 1~5 局: 177 @ http://localhost:8765/signals.js:4936
+[LOG] 6~10 局: 75 @ http://localhost:8765/signals.js:4937
+[LOG] 11~15 局: 43 @ http://localhost:8765/signals.js:4938
+[LOG] 16 局以上: 32 @ http://localhost:8765/signals.js:4939
+[LOG] [INFO] 🔍 檢測到：莊=46、閒=38、和=5、差距=3、4張=49/89 (55.1%)（莊閒差距上限=5，和局上限=2，4張局上限=40%） @ http://localhost:8765/signals_ui.js:2179
+[LOG] [WARN] 🔍 ⚠️ 和局超過上限（和=5 > 2），重新生成... @ http://localhost:8765/signals_ui.js:2179
+[LOG] [WARN] 🔍 ⚠️ 4張局比例超過上限（55.1% > 40%），重新生成... @ http://localhost:8765/signals_ui.js:2179
+[LOG] [INFO] ⚙️ [殘牌處理] 開始分配 2 張殘牌 @ http://localhost:8765/signals_ui.js:2179
+[LOG] 牌靴總共 416 張牌，91 局 @ http://localhost:8765/signals.js:4815
+[LOG] === 回復分析結果 === @ http://localhost:8765/signals.js:4929
+[LOG] 總切牌點: 416 @ http://localhost:8765/signals.js:4930
+[LOG] 平均消耗: 29.5 張 / 6.0 局 @ http://localhost:8765/signals.js:4931
+[LOG] 最大消耗: 132 張 / 27 局 (第 308 張) @ http://localhost:8765/signals.js:4932
+[LOG] 立即回復: 91 個 ( 21.9 %) @ http://localhost:8765/signals.js:4933
+[LOG] === 分佈統計 === @ http://localhost:8765/signals.js:4934
+[LOG] 立即回復 (0局): 91 @ http://localhost:8765/signals.js:4935
+[LOG] 1~5 局: 157 @ http://localhost:8765/signals.js:4936
+[LOG] 6~10 局: 79 @ http://localhost:8765/signals.js:4937
+[LOG] 11~15 局: 45 @ http://localhost:8765/signals.js:4938
+[LOG] 16 局以上: 44 @ http://localhost:8765/signals.js:4939
+[LOG] [INFO] 🔍 檢測到：莊=47、閒=42、和=2、差距=3、4張=51/91 (56.0%)（莊閒差距上限=5，和局上限=2，4張局上限=40%） @ http://localhost:8765/signals_ui.js:2179
+[LOG] [WARN] 🔍 ⚠️ 4張局比例超過上限（56.0% > 40%），重新生成... @ http://localhost:8765/signals_ui.js:2179
+[LOG] 牌靴總共 416 張牌，89 局 @ http://localhost:8765/signals.js:4815
+[LOG] === 回復分析結果 === @ http://localhost:8765/signals.js:4929
+[LOG] 總切牌點: 416 @ http://localhost:8765/signals.js:4930
+[LOG] 平均消耗: 24.7 張 / 5.0 局 @ http://localhost:8765/signals.js:4931
+[LOG] 最大消耗: 139 張 / 29 局 (第 64 張) @ http://localhost:8765/signals.js:4932
+[LOG] 立即回復: 89 個 ( 21.4 %) @ http://localhost:8765/signals.js:4933
+[LOG] === 分佈統計 === @ http://localhost:8765/signals.js:4934
+[LOG] 立即回復 (0局): 89 @ http://localhost:8765/signals.js:4935
+[LOG] 1~5 局: 200 @ http://localhost:8765/signals.js:4936
+[LOG] 6~10 局: 67 @ http://localhost:8765/signals.js:4937
+[LOG] 11~15 局: 22 @ http://localhost:8765/signals.js:4938
+[LOG] 16 局以上: 38 @ http://localhost:8765/signals.js:4939
+[LOG] [INFO] 🔍 檢測到：莊=43、閒=42、和=4、差距=3、4張=45/89 (50.6%)（莊閒差距上限=5，和局上限=2，4張局上限=40%） @ http://localhost:8765/signals_ui.js:2179
+[LOG] [WARN] 🔍 ⚠️ 和局超過上限（和=4 > 2），重新生成... @ http://localhost:8765/signals_ui.js:2179
+[LOG] [WARN] 🔍 ⚠️ 4張局比例超過上限（50.6% > 40%），重新生成... @ http://localhost:8765/signals_ui.js:2179
+[LOG] [INFO] ⚙️ [殘牌處理] 開始分配 5 張殘牌 @ http://localhost:8765/signals_ui.js:2179
+[LOG] 牌靴總共 416 張牌，89 局 @ http://localhost:8765/signals.js:4815
+[LOG] === 回復分析結果 === @ http://localhost:8765/signals.js:4929
+[LOG] 總切牌點: 416 @ http://localhost:8765/signals.js:4930
+[LOG] 平均消耗: 27.1 張 / 5.6 局 @ http://localhost:8765/signals.js:4931
+[LOG] 最大消耗: 134 張 / 28 局 (第 173 張) @ http://localhost:8765/signals.js:4932
+[LOG] 立即回復: 89 個 ( 21.4 %) @ http://localhost:8765/signals.js:4933
+[LOG] === 分佈統計 === @ http://localhost:8765/signals.js:4934
+[LOG] 立即回復 (0局): 89 @ http://localhost:8765/signals.js:4935
+[LOG] 1~5 局: 163 @ http://localhost:8765/signals.js:4936
+[LOG] 6~10 局: 92 @ http://localhost:8765/signals.js:4937
+[LOG] 11~15 局: 37 @ http://localhost:8765/signals.js:4938
+[LOG] 16 局以上: 35 @ http://localhost:8765/signals.js:4939
+[LOG] [INFO] 🔍 檢測到：莊=49、閒=36、和=4、差距=9、4張=46/89 (51.7%)（莊閒差距上限=5，和局上限=2，4張局上限=40%） @ http://localhost:8765/signals_ui.js:2179
+[LOG] [WARN] 🔍 ⚠️ 莊閒差距超標（莊=49 vs 閒+和=40，差距=9 > 5），重新生成... @ http://localhost:8765/signals_ui.js:2179
+[LOG] [WARN] 🔍 ⚠️ 和局超過上限（和=4 > 2），重新生成... @ http://localhost:8765/signals_ui.js:2179
+[LOG] [WARN] 🔍 ⚠️ 4張局比例超過上限（51.7% > 40%），重新生成... @ http://localhost:8765/signals_ui.js:2179
+[LOG] [INFO] ⚙️ [殘牌處理] 開始分配 6 張殘牌 @ http://localhost:8765/signals_ui.js:2179
+[LOG] 牌靴總共 416 張牌，88 局 @ http://localhost:8765/signals.js:4815
+[LOG] === 回復分析結果 === @ http://localhost:8765/signals.js:4929
+[LOG] 總切牌點: 416 @ http://localhost:8765/signals.js:4930
+[LOG] 平均消耗: 26.1 張 / 5.2 局 @ http://localhost:8765/signals.js:4931
+[LOG] 最大消耗: 122 張 / 25 局 (第 162 張) @ http://localhost:8765/signals.js:4932
+[LOG] 立即回復: 88 個 ( 21.2 %) @ http://localhost:8765/signals.js:4933
+[LOG] === 分佈統計 === @ http://localhost:8765/signals.js:4934
+[LOG] 立即回復 (0局): 88 @ http://localhost:8765/signals.js:4935
+[LOG] 1~5 局: 165 @ http://localhost:8765/signals.js:4936
+[LOG] 6~10 局: 100 @ http://localhost:8765/signals.js:4937
+[LOG] 11~15 局: 40 @ http://localhost:8765/signals.js:4938
+[LOG] 16 局以上: 23 @ http://localhost:8765/signals.js:4939
+[LOG] [INFO] 🔍 檢測到：莊=49、閒=35、和=4、差距=10、4張=45/88 (51.1%)（莊閒差距上限=5，和局上限=2，4張局上限=40%） @ http://localhost:8765/signals_ui.js:2179
+[LOG] [WARN] 🔍 ⚠️ 莊閒差距超標（莊=49 vs 閒+和=39，差距=10 > 5），重新生成... @ http://localhost:8765/signals_ui.js:2179
+[LOG] [WARN] 🔍 ⚠️ 和局超過上限（和=4 > 2），重新生成... @ http://localhost:8765/signals_ui.js:2179
+[LOG] [WARN] 🔍 ⚠️ 4張局比例超過上限（51.1% > 40%），重新生成... @ http://localhost:8765/signals_ui.js:2179
+[LOG] [INFO] ⚙️ [殘牌處理] 開始分配 2 張殘牌 @ http://localhost:8765/signals_ui.js:2179
+[LOG] 牌靴總共 416 張牌，85 局 @ http://localhost:8765/signals.js:4815
+[LOG] === 回復分析結果 === @ http://localhost:8765/signals.js:4929
+[LOG] 總切牌點: 416 @ http://localhost:8765/signals.js:4930
+[LOG] 平均消耗: 23.8 張 / 4.8 局 @ http://localhost:8765/signals.js:4931
+[LOG] 最大消耗: 101 張 / 20 局 (第 388 張) @ http://localhost:8765/signals.js:4932
+[LOG] 立即回復: 85 個 ( 20.4 %) @ http://localhost:8765/signals.js:4933
+[LOG] === 分佈統計 === @ http://localhost:8765/signals.js:4934
+[LOG] 立即回復 (0局): 85 @ http://localhost:8765/signals.js:4935
+[LOG] 1~5 局: 174 @ http://localhost:8765/signals.js:4936
+[LOG] 6~10 局: 103 @ http://localhost:8765/signals.js:4937
+[LOG] 11~15 局: 41 @ http://localhost:8765/signals.js:4938
+[LOG] 16 局以上: 13 @ http://localhost:8765/signals.js:4939
+[LOG] [INFO] 🔍 檢測到：莊=44、閒=40、和=1、差距=3、4張=31/85 (36.5%)（莊閒差距上限=5，和局上限=2，4張局上限=40%） @ http://localhost:8765/signals_ui.js:2179
+[LOG] 牌靴總共 416 張牌，85 局 @ http://localhost:8765/signals.js:4815
+[LOG] === 回復分析結果 === @ http://localhost:8765/signals.js:4929
+[LOG] 總切牌點: 416 @ http://localhost:8765/signals.js:4930
+[LOG] 平均消耗: 23.5 張 / 4.8 局 @ http://localhost:8765/signals.js:4931
+[LOG] 最大消耗: 101 張 / 20 局 (第 388 張) @ http://localhost:8765/signals.js:4932
+[LOG] 立即回復: 85 個 ( 20.4 %) @ http://localhost:8765/signals.js:4933
+[LOG] === 分佈統計 === @ http://localhost:8765/signals.js:4934
+[LOG] 立即回復 (0局): 85 @ http://localhost:8765/signals.js:4935
+[LOG] 1~5 局: 178 @ http://localhost:8765/signals.js:4936
+[LOG] 6~10 局: 99 @ http://localhost:8765/signals.js:4937
+[LOG] 11~15 局: 41 @ http://localhost:8765/signals.js:4938
+[LOG] 16 局以上: 13 @ http://localhost:8765/signals.js:4939
+[LOG] [INFO] 🔁 自動卡色調整啟動（生成流程）... @ http://localhost:8765/signals_ui.js:2179
+[LOG] [ERROR] 卡色交換失敗:第 85 局 位置 2(目標 藍背,牌 2♥)找不到安全可行的交換方案。 @ http://localhost:8765/signals_ui.js:2179
+[LOG] 牌靴總共 416 張牌，85 局 @ http://localhost:8765/signals.js:4815
+[LOG] === 回復分析結果 === @ http://localhost:8765/signals.js:4929
+[LOG] 總切牌點: 416 @ http://localhost:8765/signals.js:4930
+[LOG] 平均消耗: 23.5 張 / 4.8 局 @ http://localhost:8765/signals.js:4931
+[LOG] 最大消耗: 101 張 / 20 局 (第 388 張) @ http://localhost:8765/signals.js:4932
+[LOG] 立即回復: 85 個 ( 20.4 %) @ http://localhost:8765/signals.js:4933
+[LOG] === 分佈統計 === @ http://localhost:8765/signals.js:4934
+[LOG] 立即回復 (0局): 85 @ http://localhost:8765/signals.js:4935
+[LOG] 1~5 局: 178 @ http://localhost:8765/signals.js:4936
+[LOG] 6~10 局: 99 @ http://localhost:8765/signals.js:4937
+[LOG] 11~15 局: 41 @ http://localhost:8765/signals.js:4938
+[LOG] 16 局以上: 13 @ http://localhost:8765/signals.js:4939
+[LOG] [SUCCESS] 生成完成! @ http://localhost:8765/signals_ui.js:2179
+[LOG] 牌靴總共 416 張牌，85 局 @ http://localhost:8765/signals.js:4815
+[LOG] === 回復分析結果 === @ http://localhost:8765/signals.js:4929
+[LOG] 總切牌點: 416 @ http://localhost:8765/signals.js:4930
+[LOG] 平均消耗: 23.5 張 / 4.8 局 @ http://localhost:8765/signals.js:4931
+[LOG] 最大消耗: 101 張 / 20 局 (第 388 張) @ http://localhost:8765/signals.js:4932
+[LOG] 立即回復: 85 個 ( 20.4 %) @ http://localhost:8765/signals.js:4933
+[LOG] === 分佈統計 === @ http://localhost:8765/signals.js:4934
+[LOG] 立即回復 (0局): 85 @ http://localhost:8765/signals.js:4935
+[LOG] 1~5 局: 178 @ http://localhost:8765/signals.js:4936
+[LOG] 6~10 局: 99 @ http://localhost:8765/signals.js:4937
+[LOG] 11~15 局: 41 @ http://localhost:8765/signals.js:4938
+[LOG] 16 局以上: 13 @ http://localhost:8765/signals.js:4939
