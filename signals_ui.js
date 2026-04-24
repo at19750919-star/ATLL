@@ -999,7 +999,14 @@ function pack_all_sensitive_and_segment(deck) {
         return info.bankerTotal === 6 && info.playerTotal <= 5;
     };
 
-    // 第一輪：優先挑選對調後莊家6點贏的敏感局
+    // 檢查整局是否不含訊號牌（B6 必須不含訊號牌，才能避免 S 局規則衝突）
+    const hasNoSignalCard = (round) => {
+        if (!round || !Array.isArray(round.cards)) return false;
+        if (typeof isSignalCardByConfig !== 'function') return true;
+        return !round.cards.some(c => c && isSignalCardByConfig(c));
+    };
+
+    // 第一輪：優先挑選對調後莊家6點贏的敏感局（必須不含訊號牌）
     if (swapB6Target > 0) {
         for (const r of all_sensitive) {
             if (swapB6Count >= swapB6Target) break;
@@ -1008,6 +1015,8 @@ function pack_all_sensitive_and_segment(deck) {
             if (r.cards.length === 4) continue; // 對調莊6不挑4張局
             if (max7PtLimit !== null && is7PtReversal(r) && sevenPtReversalCount >= max7PtLimit) continue;
             if (!isSwapBankerSix(r)) continue;
+            if (!hasNoSignalCard(r)) continue; // B6 必須不含訊號牌
+            if (typeof hasFullHouse === 'function' && hasFullHouse(r)) continue; // B6 不能同時是三條/T 局
             r.segment = 'A';
             a_rounds.push(r);
             r.cards.forEach(c => used_pos.add(c.pos));
@@ -1027,11 +1036,18 @@ function pack_all_sensitive_and_segment(deck) {
         if (r.cards.length === 4 && fourCardCount >= maxFourCardRounds) continue;
         // 七點逆轉已達上限就跳過
         if (max7PtLimit !== null && is7PtReversal(r) && sevenPtReversalCount >= max7PtLimit) continue;
+        // 和局必須不含訊號牌（避免後續對調把 B6 破壞）
+        if (r.result === '和' && !hasNoSignalCard(r)) continue;
+        // B6 達目標就不再加入新的 B6 局
+        if (swapB6Target > 0 && swapB6Count >= swapB6Target && isSwapBankerSix(r)) continue;
+        // 三條+B6 重疊排除
+        if (typeof hasFullHouse === 'function' && hasFullHouse(r) && isSwapBankerSix(r)) continue;
         r.segment = 'A';
         a_rounds.push(r);
         r.cards.forEach(c => used_pos.add(c.pos));
         if (r.cards.length === 4) fourCardCount++;
         if (is7PtReversal(r)) sevenPtReversalCount++;
+        if (isSwapBankerSix(r)) swapB6Count++;
     }
     log(`🔍 自然敏感局加入完成：A段 ${a_rounds.length} 局(4張=${fourCardCount})，已用牌 ${used_pos.size} 張`, 'info');
     
@@ -1065,6 +1081,14 @@ function pack_all_sensitive_and_segment(deck) {
                     if (max7PtLimit !== null && is7PtReversal(finalRound) && sevenPtReversalCount >= max7PtLimit) {
                         return null;
                     }
+                    // 和局必須不含訊號牌
+                    if (finalRound.result === '和' && !hasNoSignalCard(finalRound)) {
+                        return null;
+                    }
+                    // B6 達目標就不再加入新的 B6 局
+                    if (swapB6Target > 0 && swapB6Count >= swapB6Target && isSwapBankerSix(finalRound)) {
+                        return null;
+                    }
                     finalRound.segment = 'A';
                     a_rounds.push(finalRound);
                     orderedOriginalCards.forEach(card => used_pos.add(card.pos));
@@ -1078,16 +1102,19 @@ function pack_all_sensitive_and_segment(deck) {
         }
         
         const cands = multi_pass_candidates_from_cards_simple(remaining);
-        // 4 張局已達上限就跳過，七點逆轉已達上限也跳過
+        // 4 張局已達上限就跳過，七點逆轉已達上限也跳過，B6 達標不再挑 B6，三條+B6 重疊排除，和局必須無訊號牌
         const isValidCandidate = (r) => Array.isArray(r.cards) && r.cards.length > 0
                 && !r.cards.some(c => used_pos.has(c.pos))
                 && !(r.cards.length === 4 && fourCardCount >= maxFourCardRounds)
-                && !(max7PtLimit !== null && is7PtReversal(r) && sevenPtReversalCount >= max7PtLimit);
-        // 優先挑選對調莊6的候選（如果目標未達成）
+                && !(max7PtLimit !== null && is7PtReversal(r) && sevenPtReversalCount >= max7PtLimit)
+                && !(swapB6Target > 0 && swapB6Count >= swapB6Target && isSwapBankerSix(r))
+                && !(typeof hasFullHouse === 'function' && hasFullHouse(r) && isSwapBankerSix(r))
+                && !(r.result === '和' && !hasNoSignalCard(r));
+        // 優先挑選對調莊6的候選（如果目標未達成，且必須不含訊號牌、不能同時是三條）
         let picked = null;
         if (Array.isArray(cands)) {
             if (swapB6Target > 0 && swapB6Count < swapB6Target) {
-                picked = cands.find(r => isValidCandidate(r) && isSwapBankerSix(r) && r.cards.length > 4);
+                picked = cands.find(r => isValidCandidate(r) && isSwapBankerSix(r) && r.cards.length > 4 && hasNoSignalCard(r) && !(typeof hasFullHouse === 'function' && hasFullHouse(r)));
             }
             if (!picked) {
                 picked = cands.find(r => isValidCandidate(r));
@@ -1330,15 +1357,15 @@ function applyTSignalLogic(rounds, a_rounds, used_pos, tail_cards) {
         log('🔍 三條與和局數量一致，無需額外調整', 'info');
     }
 
-    // ===== 階段 3.5：限制三條局與 T 局最多 4 局 =====
+    // ===== 階段 3.5：限制三條局與 T 局最多 3 局 =====
     log('🔍 開始限制三條/T局上限', 'info');
     let cappedFullHouseRemoved = 0;
     let cappedTRemoved = 0;
 
     fullHouseCount = a_rounds.filter(hasFullHouse).length;
-    if (fullHouseCount > 4) {
-        const excess = fullHouseCount - 4;
-        log(`🔍 三條局 ${fullHouseCount} > 4，需再拆出 ${excess} 局三條局`, 'warn');
+    if (fullHouseCount > 3) {
+        const excess = fullHouseCount - 3;
+        log(`🔍 三條局 ${fullHouseCount} > 3，需再拆出 ${excess} 局三條局`, 'warn');
         for (let i = a_rounds.length - 1; i >= 0 && cappedFullHouseRemoved < excess; i--) {
             const round = a_rounds[i];
             if (hasFullHouse(round)) {
@@ -1352,10 +1379,10 @@ function applyTSignalLogic(rounds, a_rounds, used_pos, tail_cards) {
     }
 
     let tIndices = getTRoundIndices(a_rounds);
-    if (tIndices.length > 4) {
-        const excess = tIndices.length - 4;
-        log(`🔍 T局 ${tIndices.length} > 4，需再拆出 ${excess} 局`, 'warn');
-        while (tIndices.length > 4) {
+    if (tIndices.length > 3) {
+        const excess = tIndices.length - 3;
+        log(`🔍 T局 ${tIndices.length} > 3，需再拆出 ${excess} 局`, 'warn');
+        while (tIndices.length > 3) {
             const idx = tIndices[tIndices.length - 1];
             if (!removeRoundByIndex(idx)) break;
             cappedTRemoved++;
@@ -1479,8 +1506,111 @@ function applyTSignalLogic(rounds, a_rounds, used_pos, tail_cards) {
     }
     
     log(`✅ 最終檢查通過：三條局 ${fullHouseCount} 與和局 ${tieCount} 數量匹配`, 'success');
-    
+
     return adjustTSignalPositions(rounds, fullHouseIndices, tieIndices);
+}
+
+// 把每個和局後連 3 局重排為 B6 局（對調後莊6閒≤5）
+// 做法：對每個和局 tieIdx，檢查 tieIdx+1、tieIdx+2、tieIdx+3 是否已是 B6，
+//       若不是就從牌靴其他位置找一個 B6 局用 swapRounds 交換過來。
+// 找不到足夠 B6 → throw，讓整副牌重新生成。
+function adjustB6AfterTiePositions(rounds) {
+    if (!Array.isArray(rounds) || rounds.length === 0) return rounds;
+
+    const isB6Round = (round) => {
+        if (!round || !Array.isArray(round.cards) || round.cards.length < 4) return false;
+        const swapped = round.cards.map(c => c.clone());
+        [swapped[0], swapped[1]] = [swapped[1], swapped[0]];
+        const info = computeRoundHands(swapped);
+        return info && info.bankerTotal === 6 && info.playerTotal <= 5;
+    };
+
+    const isProtected = (round) => {
+        if (!round) return true;
+        // T 局、和局、三條局不可被當成 B6 的交換對象
+        if (round.result === '和') return true;
+        if (round.isT) return true;
+        if (typeof hasFullHouse === 'function' && hasFullHouse(round)) return true;
+        if (round.segment === 'C') return true;
+        return false;
+    };
+
+    const tieIndices = [];
+    rounds.forEach((round, idx) => {
+        if (round && round.result === '和') tieIndices.push(idx);
+    });
+
+    if (tieIndices.length === 0) return rounds;
+
+    log(`🔍 開始調整 B6 位置：和局 ${tieIndices.length} 個，目標每個和局後 3 局都是 B6`, 'info');
+
+    // 先盤點整副牌中哪些 index 是 B6（排除保護局）
+    const b6Pool = new Set();
+    rounds.forEach((round, idx) => {
+        if (isProtected(round)) return;
+        if (isB6Round(round)) b6Pool.add(idx);
+    });
+    log(`🔍 現有 B6 局候選：${b6Pool.size} 個`, 'info');
+
+    const needed = tieIndices.length * 3;
+    if (b6Pool.size < needed) {
+        throw new Error(`B6 位置調整失敗：現有 B6 候選 ${b6Pool.size} 個 < 需求 ${needed} 個`);
+    }
+
+    // 先標記「和局後 3 個 slot」的目標位置
+    const targetSlots = [];
+    for (const tieIdx of tieIndices) {
+        for (let offset = 1; offset <= 3; offset++) {
+            const slotIdx = tieIdx + offset;
+            if (slotIdx >= rounds.length) {
+                throw new Error(`B6 位置調整失敗：和局在第 ${tieIdx + 1} 局，後面不足 3 局空間`);
+            }
+            // 目標 slot 不能是和/T/三條/C 段
+            if (isProtected(rounds[slotIdx])) {
+                throw new Error(`B6 位置調整失敗：第 ${slotIdx + 1} 局（和局後 ${offset}）是保護局，不能放 B6`);
+            }
+            targetSlots.push(slotIdx);
+        }
+    }
+
+    // 對每個 target slot：若已是 B6 → 鎖住；否則從 b6Pool 挑一個非 targetSlot 的 B6 換過來
+    const lockedIndices = new Set();
+    for (const slotIdx of targetSlots) {
+        if (b6Pool.has(slotIdx)) {
+            // 已經是 B6，直接鎖住
+            lockedIndices.add(slotIdx);
+            b6Pool.delete(slotIdx);
+            continue;
+        }
+        // 找一個 B6 局，位置不在 lockedIndices 且不在 targetSlots 已處理過的（b6Pool 已剔除用過的）
+        let donorIdx = -1;
+        for (const poolIdx of b6Pool) {
+            if (lockedIndices.has(poolIdx)) continue;
+            if (targetSlots.includes(poolIdx)) continue; // 保留給其他 slot
+            donorIdx = poolIdx;
+            break;
+        }
+        if (donorIdx === -1) {
+            // 退而求其次：即使 donorIdx 在未處理的 targetSlots 內，只要不在 lockedIndices 也可以用
+            for (const poolIdx of b6Pool) {
+                if (lockedIndices.has(poolIdx)) continue;
+                donorIdx = poolIdx;
+                break;
+            }
+        }
+        if (donorIdx === -1) {
+            throw new Error(`B6 位置調整失敗：找不到可用的 B6 來填第 ${slotIdx + 1} 局`);
+        }
+
+        // 交換 slotIdx 跟 donorIdx
+        swapRounds(rounds, slotIdx, donorIdx);
+        // 交換後 slotIdx 位置是 B6，donorIdx 位置是原本的非 B6 局
+        lockedIndices.add(slotIdx);
+        b6Pool.delete(donorIdx);
+    }
+
+    log(`✅ B6 位置調整完成：${targetSlots.length} 個 slot 已填入 B6`, 'success');
+    return rounds;
 }
 
 // 從拆除的敏感局與剩餘牌重洗，補回新的敏感局
@@ -1508,6 +1638,13 @@ function recycleRemovedRounds(removedRounds, initialTailCards, targetRounds, use
     let idleAttempts = 0;
     let added = 0;
 
+    // 排除「原始莊6閒≤5」的候選
+    const isOriginalBanker6 = (r) => {
+        if (!r || !Array.isArray(r.cards) || r.cards.length < 4) return false;
+        const info = computeRoundHands(r.cards);
+        return info && info.bankerTotal === 6 && info.playerTotal <= 5;
+    };
+
     while (poolCards.length >= MULTI_PASS_MIN_CARDS && idleAttempts < MAX_RECYCLE_ATTEMPTS) {
         idleAttempts++;
         const candidates = multi_pass_candidates_from_cards_simple(poolCards);
@@ -1516,9 +1653,10 @@ function recycleRemovedRounds(removedRounds, initialTailCards, targetRounds, use
                 Array.isArray(r.cards) &&
                 r.cards.length > 0 &&
                 r.result !== '和' &&
-                !hasFullHouse(r) &&  // ← 新增：排除三條局
+                !hasFullHouse(r) &&  // 排除三條局
+                !isOriginalBanker6(r) &&  // 排除原始莊6閒≤5
                 !r.cards.some(c => used_pos.has(c.pos)))
-            : (candidates && candidates.result === '和' ? null : (candidates && hasFullHouse(candidates) ? null : candidates));
+            : (candidates && candidates.result === '和' ? null : (candidates && (hasFullHouse(candidates) || isOriginalBanker6(candidates)) ? null : candidates));
         if (!picked || !Array.isArray(picked.cards) || picked.cards.length === 0) {
             continue;
         }
@@ -1784,8 +1922,7 @@ if (typeof window !== 'undefined') {
             if (applyConfigBtn) applyConfigBtn.addEventListener('click', ui.applySignalConfig);
             initSwapPreviewToggle();
 
-        const autoBtn = document.getElementById('btnAutoColor');
-        if (autoBtn) autoBtn.addEventListener('click', ui.runAutoColorSwap);
+        // 換色按鈕由 setupViolationStatsListeners 處理（直接套用，不用預覽）
         const autoReorderBtn = document.getElementById('btnAutoReorder');
         if (autoReorderBtn) autoReorderBtn.addEventListener('click', () => {
             if (!editEnabled || !currentRounds || currentRounds.length === 0) {
@@ -2157,11 +2294,14 @@ if (colorBtn) {
             if (typeof collectCardColorViolationRounds === 'function') {
                 colorRounds = collectCardColorViolationRounds(currentRounds);
             } else {
+                const validSet = (typeof getValidCardColorStrings === 'function')
+                    ? getValidCardColorStrings()
+                    : new Set(['BBBR', 'RRRB']);
                 for (let i = 0; i < currentRounds.length; i++) {
                     const round = currentRounds[i];
                     if (!round || !Array.isArray(round.cards) || round.cards.length < 4) continue;
                     const colors = round.cards.slice(0, 4).map(c => c.back_color || '?').join('');
-                    if (colors !== 'BBBR' && colors !== 'RRRB') {
+                    if (!validSet.has(colors)) {
                         colorRounds.push(i + 1);
                     }
                 }
@@ -2652,9 +2792,6 @@ function renderRoundsTable(rounds, analysis) {
             } else {
                 classes.push('non-s-signal-card');
             }
-            if (card.suit === '♠') {
-                classes.push('card-suit-spade');
-            }
 
             return `<span class="${classes.join(' ')}" data-action="card" data-r="${index}" data-c="${cardIdx}">${card.short()}</span>`;
         }).join('');
@@ -2851,6 +2988,10 @@ function updateEditUI() {
     }
     if (btnApply) {
         btnApply.disabled = !canModify;
+    }
+    const btnAutoColor = document.getElementById('btnAutoColor');
+    if (btnAutoColor) {
+        btnAutoColor.disabled = !(Array.isArray(currentRounds) && currentRounds.length > 0);
     }
     if (typeof document !== 'undefined' && document.body) {
         const zoomEnabled = canModify && EDIT_STATE.mode !== 'none';
