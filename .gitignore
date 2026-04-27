@@ -12,3 +12,10 @@ package-lock.json
 console-*.txt
 page-*.png
 shoe-result.png
+
+# 開發截圖 / 暫存
+*.png
+console-all.log
+*.xlsx
+*.bak_*
+__pycache__/

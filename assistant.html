@@ -3,6 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <title>理牌助手</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
       body {
         margin: 0;
@@ -428,11 +431,12 @@
         border-radius: 6px;
         background-color: rgba(240, 240, 240, 0.08);
         border: 5px solid transparent;
+        font-family: "Oswald", Impact, "Arial Narrow", sans-serif;
         font-size: calc(var(--grid-row-size) * 0.72);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-weight: 600;
+        font-weight: 400;
         color: #e2e8f0;
         transition:
           transform 0.1s ease,
@@ -916,7 +920,7 @@
       #current-file-display {
         display: none;
         position: fixed;
-        top: 10px;
+        top: 55px;
         left: 10px;
         background-color: rgba(0, 0, 0, 0.85);
         padding: 12px 18px;
@@ -1299,42 +1303,8 @@
           font-size: 1.1em;
         "
       >
-        📂 載入已儲存的檔案
+        📂 載入雲端檔案
       </button>
-
-      <!-- 匯出/匯入按鈕 -->
-      <div style="display: flex; gap: 10px; margin-top: 15px">
-        <button
-          id="export-data-btn"
-          style="
-            flex: 1;
-            padding: 10px 20px;
-            background-color: #ff9800;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 1em;
-          "
-        >
-          📤 匯出資料
-        </button>
-        <button
-          id="import-data-btn"
-          style="
-            flex: 1;
-            padding: 10px 20px;
-            background-color: #2196f3;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 1em;
-          "
-        >
-          📥 匯入資料
-        </button>
-      </div>
 
       <!-- 從雲端載入按鈕 -->
       <button
@@ -1355,12 +1325,21 @@
         ☁️ 從雲端載入
       </button>
 
-      <input
-        type="file"
-        id="import-file-input"
-        accept=".json"
-        style="display: none"
-      />
+      <button
+        id="skip-upload-btn"
+        style="
+          margin-top: 10px;
+          padding: 12px 24px;
+          background-color: #555;
+          color: #ccc;
+          border: none;
+          border-radius: 5px;
+          cursor: pointer;
+          font-size: 1em;
+        "
+      >
+        直接進入語音助手
+      </button>
 
       <!-- 上傳頁面的檔案列表 -->
       <div
@@ -1368,14 +1347,15 @@
         style="
           display: none;
           margin-top: 20px;
-          max-width: 400px;
+          max-width: 95%;
+          width: 95%;
           background-color: #1b1b1b;
           border-radius: 10px;
           padding: 15px;
         "
       >
         <h3 style="margin: 0 0 15px 0; color: white; text-align: center">
-          已儲存的檔案
+          雲端檔案
         </h3>
         <div id="upload-saved-files"></div>
         <button
@@ -1400,21 +1380,8 @@
 
     <!-- 檔案管理器 -->
     <div id="file-manager">
-      <h3>已儲存的檔案</h3>
-      <button id="save-current-btn">儲存目前檔案</button>
-      <div
-        style="
-          margin: 15px 0;
-          padding: 10px;
-          background-color: rgba(79, 195, 247, 0.1);
-          border-radius: 5px;
-        "
-      >
-        <h4 style="margin: 0 0 10px 0; font-size: 0.9em; color: #4fc3f7">
-          最近開啟：
-        </h4>
-        <div id="recent-files-list" style="font-size: 0.85em"></div>
-      </div>
+      <h3>雲端檔案</h3>
+      <button id="save-current-btn">儲存到雲端</button>
       <div id="saved-files-list"></div>
     </div>
 
@@ -1775,6 +1742,8 @@
 
     <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
     <script>
+      const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbypt3_PnEL5TgdDPaBwg1M5bWAjQMR9dD5Jslicn3eZCtuNSTtqO35RafhQpuX-l9_m/exec';
+
       document.addEventListener("DOMContentLoaded", function () {
         const fileInput = document.getElementById("file-input");
         const uploadContainer = document.getElementById("upload-container");
@@ -2064,73 +2033,17 @@
         const importDataBtn = document.getElementById("import-data-btn");
         const importFileInput = document.getElementById("import-file-input");
 
-        // 匯出資料
-        exportDataBtn.addEventListener("click", function () {
-          const savedFiles = JSON.parse(
-            localStorage.getItem("savedExcelFiles") || "[]",
-          );
-          if (savedFiles.length === 0) {
-            alert("目前沒有已儲存的檔案");
-            return;
-          }
-
-          const dataStr = JSON.stringify(savedFiles, null, 2);
-          const blob = new Blob([dataStr], { type: "application/json" });
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement("a");
-          link.href = url;
-          link.download = "saved_excel_files_" + new Date().getTime() + ".json";
-          link.click();
-          URL.revokeObjectURL(url);
-          alert("資料已匯出！請將檔案傳送到手機後匯入。");
-        });
-
-        // 點擊匯入按鈕
-        importDataBtn.addEventListener("click", function () {
-          importFileInput.click();
-        });
-
-        // 處理匯入檔案
-        importFileInput.addEventListener("change", function (e) {
-          const file = e.target.files[0];
-          if (!file) return;
-
-          const reader = new FileReader();
-          reader.onload = function (event) {
-            try {
-              const importedData = JSON.parse(event.target.result);
-              if (!Array.isArray(importedData)) {
-                throw new Error("檔案格式錯誤");
-              }
-
-              // 合併資料（避免覆蓋現有檔案）
-              const existingFiles = JSON.parse(
-                localStorage.getItem("savedExcelFiles") || "[]",
-              );
-              const mergedFiles = [...existingFiles];
-
-              importedData.forEach((importFile) => {
-                // 檢查是否已存在相同 ID 的檔案
-                const exists = mergedFiles.find((f) => f.id === importFile.id);
-                if (!exists) {
-                  mergedFiles.push(importFile);
-                }
-              });
-
-              localStorage.setItem(
-                "savedExcelFiles",
-                JSON.stringify(mergedFiles),
-              );
-              alert(`成功匯入 ${importedData.length} 個檔案！`);
-              loadSavedFiles();
-              updateUploadFileList();
-            } catch (error) {
-              alert("匯入失敗：" + error.message);
-            }
-          };
-          reader.readAsText(file);
-          importFileInput.value = ""; // 清空以便下次選擇
-        });
+        // 匯出/匯入已改為雲端儲存，按鈕保留但改為提示
+        if (exportDataBtn) {
+          exportDataBtn.addEventListener("click", function () {
+            alert("檔案已儲存在 Google 雲端，不需要匯出。");
+          });
+        }
+        if (importDataBtn) {
+          importDataBtn.addEventListener("click", function () {
+            alert("檔案已儲存在 Google 雲端，不需要匯入。");
+          });
+        }
 
         // ===== 批次雲端匯入 =====
         let batchQueue = [];    // [{id, name, ...}, ...]
@@ -2162,7 +2075,7 @@
             loadingSpinner.textContent = `正在下載 (${index + 1}/${batchQueue.length}): ${file.name}...`;
 
             const downloadUrl =
-              "https://script.google.com/macros/s/AKfycbypt3_PnEL5TgdDPaBwg1M5bWAjQMR9dD5Jslicn3eZCtuNSTtqO35RafhQpuX-l9_m/exec?fileId=" +
+              APPS_SCRIPT_URL + "?fileId=" +
               file.id;
             const fileResponse = await fetch(downloadUrl);
             const base64Data = await fileResponse.text();
@@ -2279,7 +2192,7 @@
               loadingSpinner.textContent = "正在連接 Google Drive...";
 
               const response = await fetch(
-                "https://script.google.com/macros/s/AKfycbypt3_PnEL5TgdDPaBwg1M5bWAjQMR9dD5Jslicn3eZCtuNSTtqO35RafhQpuX-l9_m/exec",
+                APPS_SCRIPT_URL,
               );
               const result = await response.json();
 
@@ -2328,6 +2241,28 @@
               loadingSpinner.style.display = "none";
               alert("從雲端載入失敗: " + error.message);
             }
+          });
+        }
+
+        // 直接進入語音助手（不載入檔案）
+        const skipUploadBtn = document.getElementById("skip-upload-btn");
+        if (skipUploadBtn) {
+          skipUploadBtn.addEventListener("click", () => {
+            fullDeck = [];
+            currentIndex = 0;
+            currentFileName = "";
+            currentFileData = null;
+            uploadContainer.style.display = "none";
+            loadingSpinner.style.display = "none";
+            assistantContainer.style.display = "flex";
+            if (assistantLayout) {
+              assistantLayout.classList.add("active");
+              assistantLayout.style.display = "flex";
+            }
+            toggleManagerBtn.style.display = "block";
+            saveCurrentBtn.style.display = "block";
+            setJumpControlsEnabled(false);
+            messageDiv.textContent = "尚未載入檔案，請從檔案管理器載入";
           });
         }
 
@@ -2404,7 +2339,7 @@
             markReadBtn.textContent = "處理中...";
 
             // 調用雲端 API
-            const url = `https://script.google.com/macros/s/AKfycbypt3_PnEL5TgdDPaBwg1M5bWAjQMR9dD5Jslicn3eZCtuNSTtqO35RafhQpuX-l9_m/exec?action=${action}&fileName=${encodeURIComponent(currentFileName)}`;
+            const url = `${APPS_SCRIPT_URL}?action=${action}&fileName=${encodeURIComponent(currentFileName)}`;
             const response = await fetch(url);
             const result = await response.json();
 
@@ -3785,7 +3720,7 @@
                 markBtn.textContent = "...";
 
                 // 調用雲端 API
-                const url = `https://script.google.com/macros/s/AKfycbypt3_PnEL5TgdDPaBwg1M5bWAjQMR9dD5Jslicn3eZCtuNSTtqO35RafhQpuX-l9_m/exec?action=${action}&fileName=${encodeURIComponent(fileName)}`;
+                const url = `${APPS_SCRIPT_URL}?action=${action}&fileName=${encodeURIComponent(fileName)}`;
                 const response = await fetch(url);
                 const result = await response.json();
 
@@ -3819,131 +3754,151 @@
           });
         }
 
-        function saveCurrentFile() {
+        async function saveCurrentFile() {
           if (!currentFileData || !currentFileName) {
             alert("沒有可儲存的檔案");
             return;
           }
-
-          const savedFiles = JSON.parse(
-            localStorage.getItem("savedExcelFiles") || "[]",
-          );
-          const existingIndex = savedFiles.findIndex(
-            (file) => file.name === currentFileName,
-          );
-          const savedFile = {
-            id:
-              existingIndex >= 0
-                ? savedFiles[existingIndex].id
-                : Date.now().toString(),
-            name: currentFileName,
-            data: Array.from(new Uint8Array(currentFileData)),
-            savedDate: new Date().toLocaleString("zh-TW"),
-            deck: fullDeck,
-          };
-
-          // 儲存到 localStorage（同名就更新，避免重複）
-          if (existingIndex >= 0) {
-            savedFiles[existingIndex] = savedFile;
-          } else {
-            savedFiles.push(savedFile);
-          }
-          localStorage.setItem("savedExcelFiles", JSON.stringify(savedFiles));
-
-          alert(
-            `檔案 "${currentFileName}" 已${existingIndex >= 0 ? "更新" : "儲存"}`,
-          );
-          loadSavedFiles();
-          updateUploadFileList();
-        }
-
-        function loadSavedFiles() {
-          const savedFiles = JSON.parse(
-            localStorage.getItem("savedExcelFiles") || "[]",
-          );
-          savedFilesList.innerHTML = "";
-
-          savedFiles.forEach((file) => {
-            const fileItem = document.createElement("div");
-            fileItem.className = "file-item";
-            fileItem.innerHTML = `
-                        <div class="file-name" onclick="loadSavedFile('${file.id}')">${file.name}</div>
-                        <div class="file-actions">
-                            <button class="file-btn rename-btn" onclick="startRename('${file.id}', '${file.name}')">重新命名</button>
-                            <button class="file-btn delete-btn" onclick="deleteSavedFile('${file.id}')">刪除</button>
-                        </div>
-                    `;
-            savedFilesList.appendChild(fileItem);
-          });
-        }
-
-        window.loadSavedFile = function (fileId) {
-          const savedFiles = JSON.parse(
-            localStorage.getItem("savedExcelFiles") || "[]",
-          );
-          const file = savedFiles.find((f) => f.id === fileId);
-
-          if (file) {
-            currentFileName = file.name;
-            currentFileData = new Uint8Array(file.data).buffer;
-            fullDeck = Array.isArray(file.deck) ? file.deck : [];
-            currentIndex = 0;
-            prepareGridPanel(fullDeck);
-
-            uploadContainer.style.display = "none";
-            loadingSpinner.style.display = "none";
-            assistantContainer.style.display = "flex";
-            if (assistantLayout) {
-              assistantLayout.classList.add("active");
-              assistantLayout.style.display = "flex";
+          try {
+            messageDiv.textContent = "正在上傳到雲端...";
+            const bytes = new Uint8Array(currentFileData);
+            let binary = '';
+            for (let i = 0; i < bytes.length; i++) {
+              binary += String.fromCharCode(bytes[i]);
             }
-            toggleManagerBtn.style.display = "block";
-            saveCurrentBtn.style.display = "block";
-            fileManager.style.display = "none";
-            setJumpControlsEnabled(true);
+            const base64Data = btoa(binary);
+            const filename = currentFileName.endsWith('.xlsx') ? currentFileName : currentFileName + '.xlsx';
 
-            // 顯示檔案名稱
-            if (currentFileDisplay && currentFileNameSpan) {
-              currentFileDisplay.style.display = "block";
-              currentFileNameSpan.textContent = file.name;
-              if (markReadBtn) {
-                markReadBtn.style.display = "block";
-                updateFileReadStatus(isFileRead(file.name));
+            const response = await fetch(APPS_SCRIPT_URL, {
+              method: 'POST',
+              body: JSON.stringify({ filename, base64Data })
+            });
+            const result = await response.json();
+            if (result.success) {
+              alert(`檔案 "${filename}" 已儲存到雲端`);
+              loadSavedFiles();
+              updateUploadFileList();
+            } else {
+              throw new Error(result.error || '上傳失敗');
+            }
+          } catch (error) {
+            alert("儲存失敗：" + error.message);
+          }
+          messageDiv.textContent = "";
+        }
+
+        async function loadSavedFiles() {
+          savedFilesList.innerHTML = '<div style="text-align:center;color:#aaa;padding:10px;">載入中...</div>';
+          try {
+            const res = await fetch(APPS_SCRIPT_URL);
+            const data = await res.json();
+            const files = (data.success && data.files) ? data.files : [];
+            savedFilesList.innerHTML = "";
+            if (files.length === 0) {
+              savedFilesList.innerHTML = '<div style="text-align:center;color:#aaa;padding:10px;">雲端沒有檔案</div>';
+              return;
+            }
+            files.forEach((file) => {
+              const fileItem = document.createElement("div");
+              fileItem.className = "file-item";
+              const date = new Date(file.lastModified).toLocaleString('zh-TW');
+              fileItem.innerHTML = `
+                <div class="file-name" onclick="loadSavedFile('${file.id}')">${file.name} <small style="color:#888">(${date})</small></div>
+              `;
+              savedFilesList.appendChild(fileItem);
+            });
+          } catch (err) {
+            savedFilesList.innerHTML = '<div style="color:#f44;padding:10px;">載入失敗: ' + err.message + '</div>';
+          }
+        }
+
+        // 從雲端下載檔案並解析 Excel 取得 deck
+        async function downloadAndParseFromDrive(fileId) {
+          const downloadUrl = `${APPS_SCRIPT_URL}?fileId=${fileId}`;
+          const response = await fetch(downloadUrl);
+          const base64Data = await response.text();
+
+          const binaryString = atob(base64Data);
+          const bytes = new Uint8Array(binaryString.length);
+          for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+          }
+          const arrayBuffer = bytes.buffer;
+
+          if (typeof ExcelJS === 'undefined') {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js';
+            await new Promise((resolve, reject) => { script.onload = resolve; script.onerror = reject; document.head.appendChild(script); });
+          }
+
+          const workbook = new ExcelJS.Workbook();
+          await workbook.xlsx.load(arrayBuffer);
+          let ws = workbook.getWorksheet('預覽') || workbook.getWorksheet('Preview');
+          if (!ws) throw new Error('找不到「預覽」工作表');
+
+          const deck = [];
+          const COLS = 21, ROWS = 31, GROUP = 7;
+          for (let r = 1; r <= ROWS; r++) {
+            for (let c = 1; c <= COLS; c++) {
+              const sheetColIndex = c + Math.floor((c - 1) / GROUP);
+              if ((c - 1) % GROUP === 0) continue;
+              const cell = ws.getCell(r, sheetColIndex);
+              const value = cell.value ? String(cell.value) : '';
+              const fill = cell.fill;
+              let backColor = null;
+              if (fill && fill.fgColor && fill.fgColor.argb) {
+                const fillColor = fill.fgColor.argb.toUpperCase();
+                if (fillColor === 'FFFFFF00') backColor = 'R';
+                else if (fillColor === 'FF00FFFF') backColor = 'B';
               }
+              if (!value && !backColor) continue;
+              const font = cell.font;
+              let suit = '♠';
+              let isSignal = false;
+              if (font && font.color && font.color.argb) {
+                const fontColor = font.color.argb.toUpperCase();
+                if (fontColor === 'FFFF0000' || fontColor === 'FFFF4D4F' || fontColor === 'FFDC3545') {
+                  isSignal = true;
+                }
+              }
+              let rank = value;
+              if (value === '0') rank = 'K';
+              if (value === '1') rank = 'A';
+              deck.push({ rank, suit, back: backColor, isSignal });
             }
+          }
+          if (deck.length === 0) throw new Error('檔案中沒有有效的卡片資料');
+          return { arrayBuffer, deck };
+        }
 
-            updateCardDisplay();
-            messageDiv.textContent = `已載入檔案: ${file.name}`;
+        window.loadSavedFile = async function (fileId) {
+          try {
+            loadingSpinner.style.display = "block";
+            loadingSpinner.textContent = "正在從雲端下載...";
+
+            const { arrayBuffer, deck } = await downloadAndParseFromDrive(fileId);
+            // 從檔案列表取得檔名
+            const nameEl = document.querySelector(`[onclick="loadSavedFile('${fileId}')"]`);
+            const fileName = nameEl ? nameEl.textContent.trim().replace(/\s*\(.*$/, '') : 'cloud-file';
+
+            currentFileName = fileName.replace('.xlsx', '');
+            currentFileData = arrayBuffer;
+            currentIndex = 0;
+
+            startAssistant(deck);
+            loadingSpinner.style.display = "none";
+            fileManager.style.display = "none";
+            messageDiv.textContent = `已從雲端載入: ${currentFileName}`;
+          } catch (error) {
+            console.error('從雲端載入錯誤:', error);
+            loadingSpinner.style.display = "none";
+            alert('從雲端載入失敗: ' + error.message);
           }
         };
 
-        window.startRename = function (fileId, currentName) {
-          renamingFileId = fileId;
-          renameInput.value = currentName;
-          renameModal.style.display = "block";
-          renameInput.focus();
-        };
+        window.startRename = function () { /* 雲端模式不支援重新命名 */ };
 
         function confirmRename() {
-          const newName = renameInput.value.trim();
-          if (!newName) {
-            alert("請輸入檔案名稱");
-            return;
-          }
-
-          const savedFiles = JSON.parse(
-            localStorage.getItem("savedExcelFiles") || "[]",
-          );
-          const fileIndex = savedFiles.findIndex(
-            (f) => f.id === renamingFileId,
-          );
-
-          if (fileIndex !== -1) {
-            savedFiles[fileIndex].name = newName;
-            localStorage.setItem("savedExcelFiles", JSON.stringify(savedFiles));
-            loadSavedFiles();
-          }
-
           renameModal.style.display = "none";
           renamingFileId = null;
         }
@@ -3953,20 +3908,7 @@
           renamingFileId = null;
         }
 
-        window.deleteSavedFile = function (fileId) {
-          if (confirm("確定要刪除這個檔案嗎？")) {
-            const savedFiles = JSON.parse(
-              localStorage.getItem("savedExcelFiles") || "[]",
-            );
-            const filteredFiles = savedFiles.filter((f) => f.id !== fileId);
-            localStorage.setItem(
-              "savedExcelFiles",
-              JSON.stringify(filteredFiles),
-            );
-            loadSavedFiles();
-            updateUploadFileList();
-          }
-        };
+        window.deleteSavedFile = function () { /* 雲端模式不支援刪除 */ };
 
         // 上傳頁面的檔案列表功能
         function showUploadFileList() {
@@ -3980,57 +3922,101 @@
           loadSavedBtn.style.display = "block";
         }
 
-        function updateUploadFileList() {
-          const savedFiles = JSON.parse(
-            localStorage.getItem("savedExcelFiles") || "[]",
-          );
-          uploadSavedFiles.innerHTML = "";
+        let _uploadFileCache = []; // 快取雲端檔案列表供批次使用
 
-          if (savedFiles.length === 0) {
-            uploadSavedFiles.innerHTML =
-              '<div style="text-align: center; color: #aaa; padding: 20px;">尚無已儲存的檔案</div>';
-            return;
+        async function updateUploadFileList() {
+          uploadSavedFiles.innerHTML = '<div style="text-align:center;color:#aaa;padding:20px;">載入中...</div>';
+          try {
+            const res = await fetch(APPS_SCRIPT_URL);
+            const data = await res.json();
+            const files = (data.success && data.files) ? data.files : [];
+            _uploadFileCache = files;
+            uploadSavedFiles.innerHTML = "";
+
+            if (files.length === 0) {
+              uploadSavedFiles.innerHTML =
+                '<div style="text-align: center; color: #aaa; padding: 20px;">雲端沒有檔案</div>';
+              return;
+            }
+
+            // 全選 + 批次載入按鈕
+            const toolbar = document.createElement("div");
+            toolbar.style.cssText = "display:flex;gap:8px;margin-bottom:10px;align-items:center;";
+            toolbar.innerHTML = `
+              <label style="color:#aaa;cursor:pointer;font-size:0.9em;display:flex;align-items:center;gap:4px;">
+                <input type="checkbox" id="uploadSelectAll"> 全選
+              </label>
+              <button id="uploadBatchLoad" style="padding:6px 14px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:0.9em;">
+                批次載入選取的檔案
+              </button>
+            `;
+            uploadSavedFiles.appendChild(toolbar);
+
+            // 網格容器：一行五個
+            const grid = document.createElement("div");
+            grid.style.cssText = "display:grid;grid-template-columns:repeat(5,1fr);gap:6px;";
+
+            files.forEach((file, idx) => {
+              const fileItem = document.createElement("div");
+              fileItem.style.cssText =
+                "display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;background:rgba(255,255,255,0.08);border-radius:6px;cursor:pointer;text-align:center;";
+              const shortName = file.name.replace('.xlsx', '');
+              fileItem.innerHTML = `
+                <input type="checkbox" class="upload-file-cb" data-idx="${idx}" style="flex-shrink:0;">
+                <div style="color:#4fc3f7;font-size:0.85em;word-break:break-all;" onclick="loadSavedFileFromUpload('${file.id}')">${shortName}</div>
+              `;
+              grid.appendChild(fileItem);
+            });
+            uploadSavedFiles.appendChild(grid);
+
+            // 全選切換
+            document.getElementById("uploadSelectAll").addEventListener("change", function() {
+              document.querySelectorAll(".upload-file-cb").forEach(cb => cb.checked = this.checked);
+            });
+
+            // 批次載入
+            document.getElementById("uploadBatchLoad").addEventListener("click", function() {
+              const checked = document.querySelectorAll(".upload-file-cb:checked");
+              if (checked.length === 0) { alert("請先勾選要載入的檔案"); return; }
+              const selected = Array.from(checked).map(cb => _uploadFileCache[cb.dataset.idx]);
+              // 設定批次佇列
+              batchQueue = selected;
+              batchIndex = -1;
+              // 隱藏列表
+              uploadFileList.style.display = "none";
+              loadSavedBtn.style.display = "block";
+              // 載入第一筆
+              loadBatchFile(0);
+            });
+          } catch (err) {
+            uploadSavedFiles.innerHTML = '<div style="color:#f44;padding:20px;">載入失敗: ' + err.message + '</div>';
           }
-
-          savedFiles.forEach((file) => {
-            const fileItem = document.createElement("div");
-            fileItem.style.cssText =
-              "display: flex; align-items: center; justify-content: space-between; padding: 10px; margin: 5px 0; background-color: rgba(255, 255, 255, 0.1); border-radius: 5px; cursor: pointer;";
-            fileItem.innerHTML = `
-                        <div style="color: #4fc3f7; flex: 1;" onclick="loadSavedFileFromUpload('${file.id}')">${file.name}</div>
-                        <div style="font-size: 0.8em; color: #aaa;">${file.savedDate}</div>
-                    `;
-            uploadSavedFiles.appendChild(fileItem);
-          });
         }
 
-        window.loadSavedFileFromUpload = function (fileId) {
-          const savedFiles = JSON.parse(
-            localStorage.getItem("savedExcelFiles") || "[]",
-          );
-          const file = savedFiles.find((f) => f.id === fileId);
+        window.loadSavedFileFromUpload = async function (fileId) {
+          try {
+            loadingSpinner.style.display = "block";
+            loadingSpinner.textContent = "正在從雲端下載...";
+            // 隱藏檔案列表
+            uploadFileList.style.display = "none";
+            loadSavedBtn.style.display = "block";
 
-          if (file) {
-            currentFileName = file.name;
-            currentFileData = new Uint8Array(file.data).buffer;
-            fullDeck = Array.isArray(file.deck) ? file.deck : [];
+            const { arrayBuffer, deck } = await downloadAndParseFromDrive(fileId);
+            // 從檔案列表取得檔名
+            const nameEl = document.querySelector(`[onclick="loadSavedFileFromUpload('${fileId}')"]`);
+            const fileName = nameEl ? nameEl.textContent.trim() : 'cloud-file';
+
+            currentFileName = fileName.replace('.xlsx', '');
+            currentFileData = arrayBuffer;
             currentIndex = 0;
 
-            // 隱藏上傳介面，顯示語音助手
-            uploadContainer.style.display = "none";
+            startAssistant(deck);
             loadingSpinner.style.display = "none";
-            assistantContainer.style.display = "flex";
-            if (assistantLayout) {
-              assistantLayout.classList.add("active");
-              assistantLayout.style.display = "flex";
-            }
-            toggleManagerBtn.style.display = "block";
-            saveCurrentBtn.style.display = "block";
-            setJumpControlsEnabled(true);
-            prepareGridPanel(fullDeck);
-
-            updateCardDisplay();
-            messageDiv.textContent = `已載入檔案: ${file.name}`;
+            messageDiv.textContent = `已從雲端載入: ${currentFileName}`;
+          } catch (error) {
+            console.error('從雲端載入錯誤:', error);
+            loadingSpinner.style.display = "none";
+            alert('從雲端載入失敗: ' + error.message);
           }
         };
       });
@@ -4070,8 +4056,9 @@
         const fnSpan = document.getElementById("current-file-name");
         fsTitle.textContent = fnSpan ? fnSpan.textContent : "";
 
-        // 固定 15 格資料 + 1 標籤 = 16 欄
-        const fsCols = 16;
+        // 讀取使用者設定的每行張數 + 1 標籤欄
+        const userCols = parseInt(document.getElementById("gridColsInput")?.value) || 15;
+        const fsCols = userCols + 1;
         clone.style.setProperty("--grid-cols", fsCols);
 
         // 寬度佔滿，高度按比例（正方形格子），可垂直捲動

@@ -1515,6 +1515,10 @@ function applyTSignalLogic(rounds, a_rounds, used_pos, tail_cards) {
 //       若不是就從牌靴其他位置找一個 B6 局用 swapRounds 交換過來。
 // 找不到足夠 B6 → throw，讓整副牌重新生成。
 function adjustB6AfterTiePositions(rounds) {
+    // 「和局後連 3 局必須是 B6」規則已解除：直接回傳原陣列，不做位置調整
+    return rounds;
+
+    // 以下保留原邏輯為死代碼（避免大幅刪除影響審閱）
     if (!Array.isArray(rounds) || rounds.length === 0) return rounds;
 
     const isB6Round = (round) => {
@@ -2430,6 +2434,10 @@ function updateRecoveryDisplay(result) {
 
     document.getElementById('recoveryAvgDetail').textContent = `${result.avgCards} 張 / ${result.avgRounds} 局`;
     document.getElementById('recoveryMaxDetail').textContent = `${result.maxCards} 張 / ${result.maxRounds} 局`;
+    const maxCardsLeftEl = document.getElementById('recoveryMaxCardsLeft');
+    const maxRoundsLeftEl = document.getElementById('recoveryMaxRoundsLeft');
+    if (maxCardsLeftEl) maxCardsLeftEl.textContent = ` ${result.maxCards} `;
+    if (maxRoundsLeftEl) maxRoundsLeftEl.textContent = ` ${result.maxRounds} `;
     document.getElementById('recoveryImmediateDetail').textContent = `${result.immediateRecovery} 個 (${result.immediatePercent}%)`;
     const maxIdxEl = document.getElementById('recoveryMaxIndexDetail');
     if (maxIdxEl) {
@@ -2479,6 +2487,20 @@ function updateRecoveryDisplay(result) {
     const swapB6RoundsEl = document.getElementById('recoverySwapB6Rounds');
     if (swapB6CountEl) swapB6CountEl.textContent = `${swapB6List.length} 局`;
     if (swapB6RoundsEl) swapB6RoundsEl.textContent = swapB6List.length > 0 ? swapB6List.join(', ') : '--';
+
+    // 莊6點贏統計（原始牌型即為莊6且閒≤5）
+    const banker6List = [];
+    rounds.forEach((rd, ri) => {
+        if (!rd || !Array.isArray(rd.cards) || rd.cards.length < 4) return;
+        const hi = computeRoundHands(rd.cards);
+        if (hi && hi.bankerTotal === 6 && hi.playerTotal <= 5) {
+            banker6List.push(ri + 1);
+        }
+    });
+    const banker6CountEl = document.getElementById('recoveryBanker6Count');
+    const banker6RoundsEl = document.getElementById('recoveryBanker6Rounds');
+    if (banker6CountEl) banker6CountEl.textContent = `${banker6List.length} 局`;
+    if (banker6RoundsEl) banker6RoundsEl.textContent = banker6List.length > 0 ? banker6List.join(', ') : '--';
 
     display.classList.remove('hidden');
 }
@@ -3568,7 +3590,7 @@ async function exportRoundsAsExcel() {
         const link = document.createElement('a');
         const url = URL.createObjectURL(blob);
         link.href = url;
-        link.download = `signal-analysis-${Date.now()}.xlsx`;
+        link.download = (typeof getNextExportFilename === 'function') ? getNextExportFilename() : `signal-analysis-${Date.now()}.xlsx`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);

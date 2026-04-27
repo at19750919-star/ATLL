@@ -16,7 +16,7 @@
     <!-- Google Fonts 字體載入 -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=VT323&family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Noto+Serif+TC:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=VT323&family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Noto+Serif+TC:wght@400;500;600;700;900&family=Noto+Sans+TC:wght@400;500;700&family=Cormorant+Garamond:wght@500;600;700&family=Inter+Tight:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 
     <style>
@@ -146,7 +146,8 @@ body::after {
 
 /* ── TOP CONTROLS ── */
 .top-controls {
-    display: flex; align-items: center; justify-content: space-between; gap: 18px;
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+    gap: 18px; row-gap: 14px;
     margin-bottom: 14px; padding: 10px 18px;
     background: var(--bg-panel);
     border: var(--border-glow);
@@ -272,6 +273,14 @@ body::after {
     text-shadow: var(--phosphor-glow);
 }
 [data-theme="light"] .signal-config-display { color: #333; text-shadow: none; }
+.mixed-color-toggle {
+    display: flex; align-items: center; gap: 4px;
+    font-size: 11px; color: var(--phosphor);
+    cursor: pointer; user-select: none;
+    text-shadow: var(--phosphor-glow);
+}
+.mixed-color-toggle input { cursor: pointer; margin: 0; }
+[data-theme="light"] .mixed-color-toggle { color: #333; text-shadow: none; }
 .signal-count-card {
     position: relative; width: 72px; height: 72px;
     background: var(--bg-inset);
@@ -398,7 +407,7 @@ body::after {
 .rank-button.selected .rank-value { color: var(--phosphor); text-shadow: 0 0 10px rgba(0, 255, 136, 0.6); }
 
 /* 違規統計 */
-.violation-stats { display: flex; gap: 10px; margin-left: auto; align-items: center; }
+.violation-stats { display: flex; flex-wrap: wrap; gap: 10px; margin-left: auto; align-items: center; }
 .violation-card {
     position: relative; width: 106px; padding: 8px;
     background: var(--bg-inset); border: var(--border-dim); border-radius: 3px;
@@ -506,8 +515,6 @@ body::after {
 .rounds-table tr.violation-row td { background: rgba(255,59,59,0.08) !important; border-bottom: 1px solid rgba(255,59,59,0.4); }
 .rounds-table tr.violation-row:hover td { background: rgba(255,59,59,0.14) !important; }
 .rounds-table td.swap-banker-six-result { color: #c06eff !important; text-shadow: 0 0 8px rgba(180,100,255,0.6); font-weight: 900 !important; font-size: 28px !important; }
-.rounds-table tr.banker-six-win-row td { background: rgba(0,255,136,0.18) !important; border-bottom: 2px solid rgba(0,255,136,0.5); }
-.rounds-table tr.banker-six-win-row:hover td { background: rgba(0,255,136,0.25) !important; }
 .rounds-table tr.card-count-mismatch td { background: rgba(0,212,255,0.07) !important; border-bottom: 1px solid rgba(0,212,255,0.25); }
 .rounds-table tr.card-count-mismatch:hover td { background: rgba(0,212,255,0.13) !important; }
 .rounds-table tr.card-color-violation-row td { background: rgba(255,170,0,0.07) !important; border-bottom: 1px solid rgba(255,170,0,0.3); }
@@ -554,8 +561,6 @@ tr.highlighted-row { background: rgba(255,170,0,0.05) !important; }
 .color-chip.blue { background: var(--cyan); box-shadow: 0 0 8px rgba(0,212,255,0.4); }
 .card-back-red  { background: rgba(255,59,59,0.18) !important; border-color: rgba(255,59,59,0.45) !important; }
 .card-back-blue { background: rgba(0,212,255,0.18) !important; border-color: rgba(0,212,255,0.45) !important; }
-.card-suit-spade { color: #b06aff !important; }
-[data-theme="light"] .card-suit-spade { color: #7b2fd6 !important; }
 
 /* ── 右側 ── */
 .right-sidebar { display: flex; flex-direction: column; gap: 12px; }
@@ -655,14 +660,33 @@ tr.highlighted-row { background: rgba(255,170,0,0.05) !important; }
 .rank-checkboxes { display: none; }
 
 /* ── 響應式 ── */
-@media (max-width: 1200px) { .main-content { grid-template-columns: 1fr 5fr 3fr; } }
-@media (max-width: 900px) {
-    .main-content { grid-template-columns: 1fr; }
+@media (max-width: 1400px) {
+    .main-content { grid-template-columns: minmax(96px, 0.8fr) minmax(0, 6fr) minmax(280px, 3fr); }
+}
+@media (max-width: 1200px) {
+    .main-content { grid-template-columns: minmax(96px, 1fr) minmax(0, 5fr) minmax(280px, 3fr); }
+    body { padding: 10px; }
+    .container { padding: 8px; }
+}
+@media (max-width: 1080px) {
+    .main-content { grid-template-columns: minmax(96px, 0.16fr) minmax(0, 1fr); grid-template-areas: "tools table" "side side"; }
+    .tool-sidebar { grid-area: tools; }
+    .table-container { grid-area: table; }
+    .right-sidebar { grid-area: side; flex-direction: row; flex-wrap: wrap; }
+    .right-sidebar > * { flex: 1 1 300px; min-width: 0; }
+    .recovery-display { min-width: auto; flex: 1 1 100%; }
+}
+@media (max-width: 768px) {
+    body { padding: 6px; }
+    .container { padding: 6px; }
+    .main-content { grid-template-columns: 1fr; grid-template-areas: "tools" "table" "side"; }
     .tool-sidebar { flex-direction: row; flex-wrap: wrap; }
-    .tool-btn { flex: 1 1 auto; min-width: 80px; }
+    .tool-btn { flex: 1 1 80px; min-width: 80px; }
     .recovery-check-inputs { justify-content: center; }
     .recovery-input-item { align-items: center; }
     .recovery-input-label { text-align: center; }
+    .top-controls { padding: 10px; }
+    .top-right-tools { flex: 1 1 100%; justify-content: center; }
 }
 
 /* ── 浮動計算視窗 ── */
@@ -741,286 +765,1149 @@ tr.highlighted-row { background: rgba(255,170,0,0.05) !important; }
 .theme-toggle .icon-light { display: none; }
 
 /* ============================================================
-   LIGHT THEME — 明亮專業風格
+   LIGHT THEME — 澳門路單帳簿 (Cantonese Score Book)
+   靈感：澳門/香港賭場手寫紙本路單、舊式銀行帳簿、印刷雕版
+   字體分工：Cormorant 襯線標題 / Inter Tight 內文 / IBM Plex Mono 數字
+   尺寸系統：8 級 type scale（11→40），spacing 4px 倍率
    ============================================================ */
 [data-theme="light"] {
-    --phosphor:       #0a8a50;
-    --phosphor-dim:   #0b7a48;
-    --phosphor-faint: rgba(10,138,80,0.1);
+    /* 紙本色票 */
+    --paper-1:    #f5ecd6;   /* 紙底（主背景） */
+    --paper-2:    #efe4c4;   /* 略深紙（panel） */
+    --paper-3:    #e8dcb1;   /* 表格隔行 */
+    --paper-edge: #d9c98f;   /* 紙邊深色 */
+    --ink-1:      #1c1812;   /* 正文墨黑 */
+    --ink-2:      #4a4232;   /* 副資訊 */
+    --ink-3:      #8b7e5e;   /* 弱化 */
+    --ink-line:   rgba(28,24,18,0.18);
+    --ink-line-2: rgba(28,24,18,0.42);
+    --vermilion:  #a51c1c;   /* 莊紅（朱砂） */
+    --ultramarine:#1e4a8e;   /* 閒藍（群青） */
+    --jade:       #1f5a3e;   /* 和綠（賭桌綠） */
+    --copper:     #a8742a;   /* 強調金 */
+    --seal-red:   #c73a2e;   /* 印章紅（警示） */
+
+    /* legacy 對應（讓 dark 寫死的 var 在 light 下也合理） */
+    --phosphor:       var(--jade);
+    --phosphor-dim:   var(--jade);
+    --phosphor-faint: rgba(31,90,62,0.10);
     --phosphor-glow:  none;
     --phosphor-soft:  none;
+    --red-alert:      var(--vermilion);
+    --red-glow:       none;
+    --amber:          var(--copper);
+    --amber-glow:     none;
+    --cyan:           var(--ultramarine);
+    --cyan-glow:      none;
 
-    --red-alert:  #d92929;
-    --red-glow:   none;
-    --amber:      #c47f00;
-    --amber-glow: none;
-    --cyan:       #0078b8;
-    --cyan-glow:  none;
+    --bg-void:    var(--paper-1);
+    --bg-tube:    var(--paper-1);
+    --bg-panel:   var(--paper-2);
+    --bg-inset:   var(--paper-1);
+    --bg-row-alt: rgba(168,116,42,0.06);
 
-    --bg-void:    #f0f2f5;
-    --bg-tube:    #f5f6f8;
-    --bg-panel:   rgba(255,255,255,0.95);
-    --bg-inset:   rgba(240,242,248,0.9);
+    --text-bright: var(--ink-1);
+    --text-mid:    var(--ink-2);
+    --text-dim:    var(--ink-3);
+    --text-off:    rgba(28,24,18,0.35);
 
-    --text-bright: #1a1a2e;
-    --text-mid:    #333350;
-    --text-dim:    #777790;
-    --text-off:    #aaaabb;
+    --border-glow: 1px solid var(--ink-line);
+    --border-dim:  1px solid var(--ink-line);
 
-    --border-glow: 1px solid rgba(10,138,80,0.25);
-    --border-dim:  1px solid rgba(0,0,0,0.1);
+    /* 字級 */
+    --t-2xs: 11px; --t-xs: 12px; --t-sm: 13px; --t-base: 14px;
+    --t-md:  16px; --t-lg: 20px; --t-xl: 28px; --t-2xl: 40px;
 
-    --bg-row-alt:  rgba(10,138,80,0.03);
+    /* 字族 */
+    --font-display: "Cormorant Garamond", "Noto Serif TC", serif;
+    --font-mono:    "IBM Plex Mono", "Roboto Mono", ui-monospace, monospace;
+    --font-label:   "Inter Tight", "Noto Sans TC", system-ui, sans-serif;
+    --font-body:    "Inter Tight", "Noto Sans TC", system-ui, sans-serif;
+    --font-tegomin: "Cormorant Garamond", "Noto Serif TC", serif;
+
+    /* 間距 */
+    --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px; --sp-6: 32px;
 }
 
-/* 去除 CRT 效果 */
+/* ── 紙本背景 + 紋理（取代 CRT 掃描線） ── */
 [data-theme="light"] body {
-    background: var(--bg-void);
-    background-image: none;
-    color: var(--text-bright);
+    background: var(--paper-1);
+    background-image:
+        /* 微紋斑點，模擬紙質 */
+        radial-gradient(circle at 18% 22%, rgba(168,116,42,0.05) 0, transparent 40%),
+        radial-gradient(circle at 78% 65%, rgba(28,24,18,0.04) 0, transparent 45%),
+        /* 細網格，仿帳簿線 */
+        repeating-linear-gradient(0deg,
+            transparent 0, transparent 23px,
+            rgba(168,116,42,0.07) 23px, rgba(168,116,42,0.07) 24px);
+    color: var(--ink-1);
     cursor: default;
+    font-family: var(--font-body);
+}
+/* 強制全部數字用現代直立等寬數字（避免 Cormorant 的 oldstyle 把 2 顯示成 z） */
+[data-theme="light"],
+[data-theme="light"] * {
+    font-variant-numeric: lining-nums tabular-nums;
+    font-feature-settings: "lnum", "tnum";
 }
 [data-theme="light"] body::before { display: none !important; }
 [data-theme="light"] body::after  { display: none !important; }
-[data-theme="light"] .container { animation: none; }
+[data-theme="light"] .container { animation: none; padding: var(--sp-3); }
 
-/* 面板 */
+/* ── 隱藏 dark 用裝飾元素 ── */
+[data-theme="light"] .seigaiha-bottom,
+[data-theme="light"] .pine-decoration,
+[data-theme="light"] .sakura-decoration { display: none !important; }
+
+/* ── 頂部容器：純 flex 容器，每張 .panel 各自呈現卡片 ── */
 [data-theme="light"] .top-controls {
-    background: var(--bg-panel);
-    border: 1px solid #d0d5dd;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 0;
+    box-shadow: none;
+    margin-bottom: var(--sp-3);
+    align-items: stretch;
+    gap: var(--sp-2);
+    row-gap: var(--sp-2);
 }
 [data-theme="light"] .top-controls::before,
-[data-theme="light"] .top-controls::after { border-color: var(--phosphor); }
+[data-theme="light"] .top-controls::after { display: none; }
 
-/* 花色按鈕 */
+/* ── 卡片通用樣式 ── */
+[data-theme="light"] .top-controls > .panel {
+    background: var(--paper-2);
+    border: 1px solid var(--ink-line-2);
+    border-radius: 2px;
+    padding: var(--sp-3);
+    box-shadow:
+        inset 0 0 0 1px rgba(245,236,214,0.7),
+        inset 0 0 0 3px var(--paper-2),
+        inset 0 0 0 4px var(--ink-line);
+    position: relative;
+    box-sizing: border-box;
+}
+
+/* 卡片1：花色 2x2 + 主動作 4 行（生成獨佔、停止/清除分半） */
+[data-theme="light"] .panel-suits-actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
+    align-items: stretch;
+    width: 148px;
+    flex: 0 0 auto;
+}
+[data-theme="light"] .panel-suits-actions .suit-selector {
+    grid-template-columns: 60px 60px;
+    gap: 4px;
+    justify-content: center;
+}
+[data-theme="light"] .panel-suits-actions .suit-button { width: 60px; height: 60px; }
+[data-theme="light"] .panel-suits-actions .suit-button .suit-symbol { font-size: 36px; }
+[data-theme="light"] .main-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+    align-items: center;
+}
+[data-theme="light"] .main-actions .generate-stop-btn {
+    width: auto !important;
+    height: 32px;
+    font-size: var(--t-base);
+    letter-spacing: 1px;
+    padding: 0 4px;
+    min-width: 0;
+}
+[data-theme="light"] .main-actions #generateBtn { grid-column: 1 / -1; }
+
+/* 卡片2：訊號圓章內部 */
+[data-theme="light"] .signal-count-wrapper {
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: var(--sp-2);
+    width: 150px;
+    flex: 0 0 auto;
+}
+[data-theme="light"] .signal-presets {
+    display: flex;
+    gap: 4px;
+    margin-top: 2px;
+}
+[data-theme="light"] .signal-presets .signal-preset-btn {
+    width: 52px !important;
+    height: 28px !important;
+    font-size: var(--t-sm) !important;
+}
+
+/* 卡片3：檢查 inputs 縮窄到剛好包住 64px input ×2 */
+[data-theme="light"] .top-controls > .recovery-check-inputs {
+    margin: 0;
+    align-self: stretch;
+    width: 160px;
+    flex: 0 0 auto;
+    padding: var(--sp-2);
+    gap: 4px 6px;
+}
+
+/* 卡片4：回復顯示 — 寬度貼合內容 */
+[data-theme="light"] .top-controls > #recoveryDisplay.panel {
+    background: var(--paper-2);
+    width: 320px;
+    min-width: 320px;
+    max-width: 320px;
+    flex: 0 0 auto;
+    padding: var(--sp-2) var(--sp-3);
+    gap: var(--sp-2);
+}
+[data-theme="light"] .top-controls > #recoveryDisplay .left-col {
+    min-width: 80px;
+    padding-right: var(--sp-2);
+}
+[data-theme="light"] .top-controls > #recoveryDisplay .main-stat { font-size: var(--t-lg); }
+[data-theme="light"] .top-controls > #recoveryDisplay .rating-stars { font-size: var(--t-sm); letter-spacing: 0; }
+[data-theme="light"] .top-controls > #recoveryDisplay .rating-text { font-size: var(--t-sm); }
+[data-theme="light"] .top-controls > #recoveryDisplay .max-cost-row {
+    margin-top: 4px;
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--ink-2);
+    line-height: 1.4;
+    white-space: nowrap;
+}
+[data-theme="light"] .top-controls > #recoveryDisplay .max-cost-row span {
+    font-family: var(--font-display);
+    font-size: var(--t-base);
+    font-weight: 700;
+    color: var(--vermilion);
+}
+[data-theme="light"] .top-controls > #recoveryDisplay .right-col {
+    font-size: var(--t-2xs);
+    line-height: 1.4;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+[data-theme="light"] .top-controls > #recoveryDisplay .sub-stat-row {
+    font-size: var(--t-2xs);
+    gap: 4px;
+    padding-bottom: 1px;
+}
+[data-theme="light"] .top-controls > #recoveryDisplay .sub-stat-label { font-size: var(--t-2xs) !important; }
+
+/* 卡片5：HUD 條 + 切牌（合併） */
+[data-theme="light"] .top-controls > .hud-bars {
+    background: var(--paper-2);
+    width: 240px;
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-1);
+}
+/* 切牌嵌在 HUD 卡片底部 */
+[data-theme="light"] .top-controls > .hud-bars > .cut-card {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-top: var(--sp-2);
+    padding-top: var(--sp-2);
+    border-top: 1px solid var(--ink-line);
+}
+[data-theme="light"] .top-controls > .hud-bars > .cut-card input,
+[data-theme="light"] .top-controls > .hud-bars > .cut-card button {
+    width: 100%;
+}
+
+/* 卡片7：訊號摘要 — 寬度給足 */
+[data-theme="light"] .top-controls > .signal-summary {
+    flex: 0 0 auto;
+    width: 622px;
+    padding: var(--sp-2);
+    background: var(--paper-2);
+}
+[data-theme="light"] .top-controls > .signal-summary .stats-table {
+    font-size: var(--t-2xs);
+    table-layout: fixed;
+    width: 100%;
+}
+[data-theme="light"] .top-controls > .signal-summary .stats-table th,
+[data-theme="light"] .top-controls > .signal-summary .stats-table td {
+    padding: 2px 2px;
+    font-size: var(--t-2xs);
+    line-height: 1.3;
+    letter-spacing: 0;
+}
+[data-theme="light"] .top-controls > .signal-summary .stats-table td:first-child,
+[data-theme="light"] .top-controls > .signal-summary .stats-table th:first-child { width: 26px; }
+[data-theme="light"] .top-controls > .signal-summary .stats-table td:last-child,
+[data-theme="light"] .top-controls > .signal-summary .stats-table th:last-child { width: 32px; }
+[data-theme="light"] .top-controls > .signal-summary .stats-total {
+    margin-top: 4px;
+    font-size: var(--t-sm);
+    font-weight: 700;
+    color: var(--ink-1);
+    text-align: center;
+    padding-top: 4px;
+    border-top: 1px solid var(--ink-line-2);
+}
+[data-theme="light"] .top-controls > .signal-summary .stats-total strong {
+    color: var(--vermilion);
+    font-size: var(--t-base);
+    margin-left: var(--sp-1);
+}
+
+/* ── 花色按鈕 ── */
 [data-theme="light"] .suit-button {
-    border: 1px solid #d0d5dd; background: #fff;
+    width: 56px; height: 56px;
+    background: var(--paper-1);
+    border: 1px solid var(--ink-line-2);
+    border-radius: 1px;
     cursor: pointer;
+    transition: all .15s ease;
+}
+[data-theme="light"] .suit-button .suit-symbol {
+    font-size: 38px;
+    font-family: serif;
 }
 [data-theme="light"] .suit-button[data-value="♠"] .suit-symbol,
 [data-theme="light"] .suit-button[data-value="♣"] .suit-symbol {
-    color: #1a1a2e; text-shadow: none;
+    color: var(--ink-1); text-shadow: none;
 }
 [data-theme="light"] .suit-button[data-value="♥"] .suit-symbol,
 [data-theme="light"] .suit-button[data-value="♦"] .suit-symbol {
-    color: var(--red-alert); text-shadow: none;
+    color: var(--vermilion); text-shadow: none;
 }
 [data-theme="light"] .suit-button:hover {
-    border-color: var(--phosphor); box-shadow: 0 2px 8px rgba(10,138,80,0.15);
+    border-color: var(--ink-1);
+    background: var(--paper-2);
+    transform: none;
+    box-shadow: none;
 }
 [data-theme="light"] .suit-button.selected {
-    border-color: var(--phosphor); background: rgba(10,138,80,0.08);
-    box-shadow: 0 0 0 2px rgba(10,138,80,0.2); animation: none;
+    border-color: var(--ink-1);
+    background: var(--ink-1);
+    transform: none;
+    box-shadow: inset 0 0 0 1px var(--paper-1);
+    animation: none;
 }
+[data-theme="light"] .suit-button.selected .suit-symbol { color: var(--paper-1); }
+[data-theme="light"] .suit-button.selected[data-value="♥"] .suit-symbol,
+[data-theme="light"] .suit-button.selected[data-value="♦"] .suit-symbol { color: #f4b8b3; }
 [data-theme="light"] .suit-button.selected[data-value="♥"],
 [data-theme="light"] .suit-button.selected[data-value="♦"] {
-    border-color: var(--red-alert); background: rgba(217,41,41,0.06);
-    box-shadow: 0 0 0 2px rgba(217,41,41,0.15);
+    border-color: var(--vermilion);
+    background: var(--vermilion);
+    box-shadow: inset 0 0 0 1px rgba(245,236,214,0.4);
 }
 
-/* 數字按鈕 */
+/* ── 數字按鈕列 ── */
 [data-theme="light"] .rank-selector-row {
-    background: var(--bg-panel); border: 1px solid #d0d5dd;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    background: var(--paper-2);
+    border: 1px solid var(--ink-line-2);
+    border-radius: 2px;
+    padding: var(--sp-2) var(--sp-3);
+    gap: var(--sp-1);
+    box-shadow:
+        inset 0 0 0 1px rgba(245,236,214,0.7),
+        inset 0 0 0 4px var(--paper-2),
+        inset 0 0 0 5px var(--ink-line);
+    margin-bottom: var(--sp-3);
 }
 [data-theme="light"] .rank-button {
-    border: 1px solid #d0d5dd; background: #fff; cursor: pointer;
+    width: 52px; height: 36px;
+    background: var(--paper-1);
+    border: 1px solid var(--ink-line-2);
+    border-radius: 1px;
+    cursor: pointer;
+    transition: all .12s ease;
 }
-[data-theme="light"] .rank-value { color: #333; text-shadow: none; }
-[data-theme="light"] .rank-button:hover { border-color: var(--phosphor); box-shadow: 0 2px 6px rgba(10,138,80,0.12); }
+[data-theme="light"] .rank-button .rank-value {
+    font-size: var(--t-md);
+    font-family: var(--font-display);
+    font-weight: 600;
+    color: var(--ink-1);
+    text-shadow: none;
+    letter-spacing: 0;
+}
+[data-theme="light"] .rank-button:hover {
+    border-color: var(--ink-1);
+    background: var(--paper-2);
+    transform: none; box-shadow: none;
+}
+[data-theme="light"] .rank-button:hover .rank-value { color: var(--ink-1); }
 [data-theme="light"] .rank-button.selected {
-    border-color: var(--phosphor); background: rgba(10,138,80,0.08);
-    box-shadow: 0 0 0 2px rgba(10,138,80,0.18);
+    background: var(--ink-1);
+    border-color: var(--ink-1);
+    transform: none; box-shadow: none;
 }
-[data-theme="light"] .rank-button.selected .rank-value { color: var(--phosphor); text-shadow: none; }
+[data-theme="light"] .rank-button.selected .rank-value { color: var(--paper-1); text-shadow: none; }
 
-/* HUD */
+/* ── HUD 莊閒和條 ── */
 [data-theme="light"] .hud-bars {
-    background: rgba(0,0,0,0.03); border: 1px solid #d0d5dd;
+    background: var(--paper-1);
+    border: 1px solid var(--ink-line);
+    border-radius: 1px;
+    padding: var(--sp-2) var(--sp-3);
+    min-width: 180px;
 }
-[data-theme="light"] .hud-bar-track { background: rgba(0,0,0,0.06); }
-[data-theme="light"] .hud-banker-fill { box-shadow: none; }
-[data-theme="light"] .hud-player-fill { box-shadow: none; }
-[data-theme="light"] .hud-tie-fill { box-shadow: none; }
-[data-theme="light"] .hud-total-row { border-top: 1px solid #d0d5dd; }
-[data-theme="light"] .hud-total-label { color: #777; }
-[data-theme="light"] .hud-total-value { text-shadow: none; }
+[data-theme="light"] .hud-bar-row { gap: var(--sp-2); }
+[data-theme="light"] .hud-bar-label {
+    font-family: var(--font-display);
+    font-size: var(--t-md);
+    font-weight: 700;
+}
+[data-theme="light"] .hud-bar-label.hud-banker { color: var(--vermilion); }
+[data-theme="light"] .hud-bar-label.hud-player { color: var(--ultramarine); }
+[data-theme="light"] .hud-bar-label.hud-tie    { color: var(--jade); }
+[data-theme="light"] .hud-bar-track {
+    background: var(--paper-3);
+    height: 6px; border-radius: 0;
+    border: 1px solid var(--ink-line);
+}
+[data-theme="light"] .hud-bar-fill { border-radius: 0; box-shadow: none !important; }
+[data-theme="light"] .hud-banker-fill { background: var(--vermilion); }
+[data-theme="light"] .hud-player-fill { background: var(--ultramarine); }
+[data-theme="light"] .hud-tie-fill    { background: var(--jade); }
+[data-theme="light"] .hud-bar-value {
+    font-family: var(--font-mono);
+    font-size: var(--t-base);
+    font-weight: 600;
+}
+[data-theme="light"] .hud-bar-value.hud-banker { color: var(--vermilion); }
+[data-theme="light"] .hud-bar-value.hud-player { color: var(--ultramarine); }
+[data-theme="light"] .hud-bar-value.hud-tie    { color: var(--jade); }
+[data-theme="light"] .hud-total-row { border-top: 1px solid var(--ink-line); padding-top: var(--sp-1); }
+[data-theme="light"] .hud-total-label {
+    color: var(--ink-3);
+    font-family: var(--font-label);
+    font-size: var(--t-2xs);
+    letter-spacing: 3px;
+}
+[data-theme="light"] .hud-total-value {
+    color: var(--ink-1);
+    font-family: var(--font-mono);
+    font-size: var(--t-md);
+    font-weight: 700;
+    text-shadow: none;
+}
 
-/* 訊號張數 */
+/* ── 訊號張數圓章 ── */
 [data-theme="light"] .signal-count-card {
-    background: #fff; border: 1px solid #d0d5dd; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    width: 64px; height: 64px;
+    background: var(--paper-1);
+    border: 1.5px solid var(--copper);
+    box-shadow: inset 0 0 0 3px var(--paper-1), inset 0 0 0 4px var(--copper);
+    border-radius: 50%;
 }
-[data-theme="light"] .signal-count-value { text-shadow: none; }
+[data-theme="light"] .signal-count-card img {
+    display: none;  /* 隱藏 hue-rotate 過的圖，紙本風不需要 */
+}
+[data-theme="light"] .signal-count-value {
+    font-family: var(--font-display);
+    font-size: var(--t-xl);
+    font-weight: 700;
+    color: var(--ink-1);
+    text-shadow: none;
+    letter-spacing: 0;
+}
+[data-theme="light"] .signal-config-display {
+    color: var(--ink-2);
+    font-family: var(--font-mono);
+    font-size: var(--t-2xs);
+    text-shadow: none;
+    line-height: 1.4;
+}
+[data-theme="light"] .mixed-color-toggle {
+    color: var(--ink-2);
+    font-family: var(--font-label);
+    font-size: var(--t-2xs);
+    text-shadow: none;
+}
+[data-theme="light"] .mixed-color-toggle input { accent-color: var(--copper); }
 
-/* 按鈕 */
+/* ── 動作按鈕（生成/停止/清除/A2/♥0） ── */
 [data-theme="light"] .generate-stop-btn {
+    width: 64px; height: 32px;
+    border: 1px solid var(--vermilion);
+    background: var(--paper-1);
+    color: var(--vermilion);
+    font-family: var(--font-label);
+    font-size: var(--t-base);
+    font-weight: 700;
+    text-shadow: none;
+    border-radius: 1px;
+    cursor: pointer;
+    letter-spacing: 2px;
+    transition: all .12s ease;
+}
+[data-theme="light"] .generate-stop-btn:hover {
+    background: var(--vermilion);
+    color: var(--paper-1);
+    box-shadow: none;
+}
+[data-theme="light"] .generate-stop-btn:disabled { opacity: .35; cursor: not-allowed; }
+[data-theme="light"] #generateBtn {
+    border-color: var(--jade);
+    background: var(--jade);
+    color: var(--paper-1);
+}
+[data-theme="light"] #generateBtn:hover { background: #2a7a55; border-color: #2a7a55; }
+[data-theme="light"] #stopGenerateBtn {
+    border-color: var(--vermilion);
+    background: var(--vermilion);
+    color: var(--paper-1);
+}
+[data-theme="light"] #stopGenerateBtn:hover { background: var(--seal-red); border-color: var(--seal-red); color: var(--paper-1); }
+[data-theme="light"] #stopGenerateBtn:disabled { background: var(--paper-1); color: var(--vermilion); border-color: var(--vermilion); opacity: .35; }
+[data-theme="light"] .generate-stop-btn.clear-signal-btn {
+    border-color: var(--ink-line-2);
+    background: var(--paper-1);
+    color: var(--ink-2);
+    text-shadow: none;
+    font-size: var(--t-base);
+}
+[data-theme="light"] .generate-stop-btn.clear-signal-btn:hover {
+    background: var(--paper-3);
+    color: var(--ink-1);
+    border-color: var(--ink-1);
+    box-shadow: none;
+}
+[data-theme="light"] .signal-preset-btn {
+    border-color: var(--copper) !important;
+    background: var(--paper-1) !important;
+    color: var(--copper) !important;
+    text-shadow: none !important;
+    font-size: var(--t-md) !important;
+    font-family: var(--font-label) !important;
+    font-weight: 700 !important;
+    letter-spacing: 1px !important;
+    height: 32px !important;
+    width: 56px !important;
+}
+[data-theme="light"] .signal-preset-btn:hover {
+    background: var(--copper) !important;
+    color: var(--paper-1) !important;
+    box-shadow: none !important;
+}
+
+/* ── 回復分析輸入區 ── */
+[data-theme="light"] .recovery-check-inputs { gap: 8px 12px; }
+[data-theme="light"] .recovery-input-label {
+    color: var(--ink-2);
+    font-family: var(--font-label);
+    font-size: var(--t-2xs);
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: none;
+}
+[data-theme="light"] .recovery-input {
+    width: 64px; height: 30px;
+    background: var(--paper-1);
+    border: 1px solid var(--ink-line-2);
+    border-radius: 1px;
+    color: var(--ink-1);
+    font-family: var(--font-mono);
+    font-size: var(--t-md);
+    font-weight: 600;
+    text-shadow: none;
+    padding: 0 var(--sp-2);
+}
+[data-theme="light"] .recovery-input::placeholder { color: var(--ink-3); font-size: var(--t-2xs); }
+[data-theme="light"] .recovery-input:focus {
+    outline: none;
+    border-color: var(--ink-1);
+    box-shadow: 0 0 0 2px var(--paper-3);
+}
+[data-theme="light"] .recovery-optimize-btn {
+    height: 30px;
+    border: 1px solid var(--ultramarine);
+    background: var(--paper-1);
+    color: var(--ultramarine);
+    text-shadow: none;
+    font-family: var(--font-label);
+    font-size: var(--t-2xs);
+    font-weight: 600;
+    letter-spacing: 1px;
+}
+[data-theme="light"] .recovery-rollback-btn {
+    height: 30px;
+    border: 1px solid var(--ink-line-2);
+    background: var(--paper-1);
+    color: var(--ink-3);
+    font-family: var(--font-label);
+    font-size: var(--t-2xs);
+    letter-spacing: 1px;
+}
+
+/* ── 回復分析顯示 ── */
+[data-theme="light"] .recovery-display {
+    background: var(--paper-1);
+    border: 1px solid var(--ink-line-2);
+    border-radius: 1px;
+    box-shadow: none;
+    padding: var(--sp-3) var(--sp-4);
+    color: var(--ink-1);
+    font-family: var(--font-body);
+}
+[data-theme="light"] .recovery-display .left-col {
+    border-right: 1px solid var(--ink-line);
+    padding-right: var(--sp-3);
+}
+[data-theme="light"] .recovery-display .main-stat {
+    color: var(--ink-1);
+    font-family: var(--font-display);
+    font-size: var(--t-xl);
+    font-weight: 700;
+    text-shadow: none;
+    letter-spacing: 0;
+    white-space: nowrap;
+}
+[data-theme="light"] .recovery-display .rating-stars {
+    color: var(--copper);
+    font-size: var(--t-md);
+    text-shadow: none;
+    letter-spacing: 1px;
+}
+[data-theme="light"] .recovery-display .rating-text {
+    color: var(--ink-2);
+    font-family: var(--font-display);
+    font-size: var(--t-md);
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: none;
+}
+[data-theme="light"] .recovery-display .right-col {
+    font-size: var(--t-sm);
+    line-height: 1.6;
+}
+[data-theme="light"] .recovery-display .sub-stat-row {
+    color: var(--ink-2);
+    border-bottom: 1px dotted var(--ink-line);
+    padding-bottom: 2px;
+}
+[data-theme="light"] .recovery-display .sub-stat-label {
+    color: var(--ink-3);
+    font-family: var(--font-label);
+    font-size: var(--t-xs);
+    font-weight: 600;
+    letter-spacing: 0;
+}
+
+/* ── 切牌 ── */
+[data-theme="light"] .cut-card { gap: var(--sp-2); }
+[data-theme="light"] .cut-card input {
+    width: 84px; height: 32px;
+    background: var(--paper-1);
+    border: 1px solid var(--ink-line-2);
+    border-radius: 1px;
+    color: var(--ink-1);
+    font-family: var(--font-mono);
+    font-size: var(--t-base);
+    font-weight: 500;
+    text-shadow: none;
+    letter-spacing: 0;
+}
+[data-theme="light"] .cut-card input::placeholder {
+    color: var(--ink-3);
+    font-family: var(--font-label);
+    font-size: var(--t-2xs);
+}
+[data-theme="light"] .cut-card input:focus {
+    outline: none;
+    border-color: var(--ink-1);
+    box-shadow: 0 0 0 2px var(--paper-3);
+}
+[data-theme="light"] .cut-card button {
+    width: 84px; height: 32px;
+    background: var(--paper-1);
+    border: 1px solid var(--ink-1);
+    border-radius: 1px;
+    color: var(--ink-1);
+    font-family: var(--font-display);
+    font-size: var(--t-md);
+    font-weight: 600;
+    text-shadow: none;
+    letter-spacing: 2px;
     cursor: pointer;
 }
-[data-theme="light"] .generate-stop-btn.clear-signal-btn { border-color: rgba(10,138,80,0.5); background: rgba(10,138,80,0.1); color: #0a8a50; text-shadow: none; }
-[data-theme="light"] .generate-stop-btn.clear-signal-btn:hover { background: rgba(10,138,80,0.2); }
-[data-theme="light"] .go-button {
-    filter: none; cursor: pointer;
+[data-theme="light"] .cut-card button:hover {
+    background: var(--ink-1);
+    color: var(--paper-1);
+    box-shadow: none;
 }
-[data-theme="light"] .go-button:hover { filter: brightness(1.1); }
 
-/* 工具列 */
-[data-theme="light"] .tool-sidebar {
-    background: var(--bg-panel); border: 1px solid #d0d5dd;
-}
-[data-theme="light"] .tool-btn {
-    background: #fff; border: 1px solid #d0d5dd; color: #333;
-    text-shadow: none; box-shadow: 0 1px 2px rgba(0,0,0,0.04); cursor: pointer;
-}
-[data-theme="light"] .tool-btn:hover {
-    background: rgba(10,138,80,0.06); border-color: var(--phosphor);
-    color: var(--phosphor); text-shadow: none; box-shadow: 0 2px 6px rgba(10,138,80,0.1);
-}
-[data-theme="light"] .tool-btn:disabled { background: #f5f5f5; color: #bbb; }
-
-/* 表格 */
-[data-theme="light"] .table-container {
-    background: var(--bg-panel); border: 1px solid #d0d5dd;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-}
-[data-theme="light"] .rounds-table th {
-    color: var(--phosphor); text-shadow: none;
-    border-bottom: 2px solid rgba(10,138,80,0.2);
-}
-[data-theme="light"] .rounds-table td {
-    border-bottom: 1px solid #eee; color: #333;
-}
-[data-theme="light"] .rounds-table tbody tr:nth-child(even) td { background: rgba(0,0,0,0.02); }
-[data-theme="light"] .rounds-table tbody tr:hover td { background: rgba(10,138,80,0.05); }
-[data-theme="light"] .outcome-banker { text-shadow: none !important; }
-[data-theme="light"] .outcome-player { text-shadow: none !important; }
-[data-theme="light"] .outcome-tie    { text-shadow: none !important; }
-
-/* 牌標籤 */
-[data-theme="light"] .card-label {
-    background: #fff; border: 1px solid #d0d5dd; color: #333; text-shadow: none;
-}
-[data-theme="light"] .card-label.s-signal-card { color: var(--red-alert); border-color: rgba(217,41,41,0.4); text-shadow: none; }
-
-/* 違規卡片 */
+/* ── 違規卡片 ── */
+[data-theme="light"] .violation-stats { gap: var(--sp-2); }
 [data-theme="light"] .violation-card {
-    background: #fff; border: 1px solid #d0d5dd;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    width: 96px;
+    background: var(--paper-1);
+    border: 1px solid var(--ink-line-2);
+    border-radius: 1px;
+    box-shadow: none;
+    padding: var(--sp-2) var(--sp-2);
 }
 [data-theme="light"] .violation-card::before,
-[data-theme="light"] .violation-card::after { border-color: #d0d5dd; }
-[data-theme="light"] .violation-count { text-shadow: none; }
-[data-theme="light"] .violation-card.has-violation { background: rgba(217,41,41,0.1); border-color: rgba(217,41,41,0.5); box-shadow: 0 0 0 1px rgba(217,41,41,0.15); }
-[data-theme="light"] .violation-card.no-violation .violation-count { text-shadow: none; }
+[data-theme="light"] .violation-card::after {
+    border-color: var(--ink-3);
+    width: 6px; height: 6px;
+}
+[data-theme="light"] .violation-label {
+    color: var(--ink-2);
+    font-family: var(--font-label);
+    font-size: var(--t-2xs);
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
+    margin-bottom: 2px;
+}
+[data-theme="light"] .violation-count {
+    font-family: var(--font-display);
+    font-size: var(--t-xl);
+    font-weight: 700;
+    color: var(--vermilion);
+    text-shadow: none;
+    letter-spacing: 0;
+}
+[data-theme="light"] .violation-detail {
+    color: var(--ink-3);
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    font-weight: 500;
+    line-height: 1.3;
+    min-height: 22px;
+    margin-top: 2px;
+}
+[data-theme="light"] .violation-card.no-violation .violation-count { color: var(--jade); text-shadow: none; }
+[data-theme="light"] .violation-card.no-violation .violation-detail { color: var(--jade); }
+[data-theme="light"] .violation-card.has-violation {
+    background: rgba(199,58,46,0.10);
+    border-color: var(--seal-red);
+    box-shadow: inset 0 0 0 1px rgba(199,58,46,0.25);
+}
+[data-theme="light"] .violation-card.has-violation .violation-count { animation: none; color: var(--seal-red); }
+[data-theme="light"] .violation-card.has-violation .violation-detail { color: var(--seal-red); }
 
-/* 色點 */
-[data-theme="light"] .color-chip.red  { box-shadow: none; }
-[data-theme="light"] .color-chip.blue { box-shadow: none; }
+/* ── 主體三欄 ── */
+[data-theme="light"] .main-content { gap: var(--sp-2); }
+
+/* ── 左側工具列 ── */
+[data-theme="light"] .tool-sidebar {
+    background: var(--paper-2);
+    border: 1px solid var(--ink-line-2);
+    border-radius: 2px;
+    padding: var(--sp-2);
+    gap: var(--sp-1);
+    box-shadow:
+        inset 0 0 0 1px rgba(245,236,214,0.7),
+        inset 0 0 0 3px var(--paper-2),
+        inset 0 0 0 4px var(--ink-line);
+}
+[data-theme="light"] .tool-btn {
+    width: 100%; height: 32px;
+    padding: 0 var(--sp-1);
+    background: var(--paper-1);
+    border: 1px solid var(--ink-line-2);
+    border-radius: 1px;
+    color: var(--ink-1);
+    font-family: var(--font-label);
+    font-size: var(--t-base);
+    font-weight: 700;
+    text-shadow: none;
+    letter-spacing: 1px;
+    box-shadow: none;
+    cursor: pointer;
+    transition: all .1s ease;
+    white-space: nowrap;
+}
+[data-theme="light"] .tool-btn::before { display: none !important; }
+[data-theme="light"] .tool-btn:hover {
+    background: var(--ink-1);
+    color: var(--paper-1);
+    border-color: var(--ink-1);
+    text-shadow: none;
+    box-shadow: none;
+    transform: none;
+}
+[data-theme="light"] .tool-btn:active { background: var(--ink-2); transform: translateY(1px); box-shadow: none; }
+[data-theme="light"] .tool-btn:disabled {
+    background: var(--paper-2);
+    color: var(--ink-3);
+    border-color: var(--ink-line);
+    text-shadow: none;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+[data-theme="light"] .tool-btn:disabled:hover {
+    background: var(--paper-2); color: var(--ink-3); border-color: var(--ink-line);
+}
+/* 強調主動作 */
+[data-theme="light"] #btnExportCombined,
+[data-theme="light"] #btnApplyChanges {
+    background: var(--copper); color: var(--paper-1); border-color: var(--copper);
+}
+[data-theme="light"] #btnExportCombined:hover,
+[data-theme="light"] #btnApplyChanges:hover {
+    background: var(--ink-1); border-color: var(--ink-1);
+}
+[data-theme="light"] .swap-preview-toggle {
+    color: var(--ink-2);
+    font-family: var(--font-label);
+    font-size: var(--t-2xs);
+    line-height: 1.3;
+    letter-spacing: 0;
+    margin-top: var(--sp-1);
+    flex-direction: column;
+    gap: 2px;
+    text-align: center;
+    padding: 4px 0;
+    border-top: 1px dotted var(--ink-line);
+}
+[data-theme="light"] .swap-preview-toggle span { display: block; }
+[data-theme="light"] .swap-preview-toggle input { accent-color: var(--copper); }
+
+/* ── 主表格 ── */
+[data-theme="light"] .table-container {
+    background: var(--paper-2);
+    border: 1px solid var(--ink-line-2);
+    border-radius: 2px;
+    padding: var(--sp-3);
+    box-shadow:
+        inset 0 0 0 1px rgba(245,236,214,0.7),
+        inset 0 0 0 4px var(--paper-2),
+        inset 0 0 0 5px var(--ink-line);
+}
+[data-theme="light"] .rounds-table th {
+    color: var(--ink-2);
+    font-family: var(--font-label);
+    font-size: var(--t-xs);
+    font-weight: 700;
+    letter-spacing: 4px;
+    text-shadow: none;
+    text-transform: none;
+    padding: var(--sp-2) var(--sp-1);
+    border-bottom: 2px solid var(--ink-1);
+}
+[data-theme="light"] .rounds-table td {
+    color: var(--ink-1);
+    font-family: var(--font-mono);
+    font-size: var(--t-md);
+    border-bottom: 1px solid var(--ink-line);
+    padding: var(--sp-1) var(--sp-1);
+}
+[data-theme="light"] .rounds-table tbody tr:nth-child(even) td {
+    background: var(--bg-row-alt);
+}
+[data-theme="light"] .rounds-table tbody tr:hover td {
+    background: rgba(168,116,42,0.16);
+    color: var(--ink-1);
+}
+
+/* 莊閒和顏色（表格內 + 任何位置） */
+[data-theme="light"] .outcome-banker { color: var(--vermilion) !important; text-shadow: none !important; font-family: var(--font-display); font-weight: 700; }
+[data-theme="light"] .outcome-player { color: var(--ultramarine) !important; text-shadow: none !important; font-family: var(--font-display); font-weight: 700; }
+[data-theme="light"] .outcome-tie    { color: var(--jade) !important; text-shadow: none !important; font-family: var(--font-display); font-weight: 700; }
+/* 表格中「終」欄只有「和」字加大，莊閒維持原大小 */
+[data-theme="light"] .rounds-table td.result-cell.outcome-tie {
+    font-size: 28px;
+}
+
+/* ── 牌標籤 ── */
+[data-theme="light"] .card-label {
+    width: 40px; height: 40px;
+    padding: 0;
+    background: var(--paper-1);
+    border: 1px solid var(--ink-line-2);
+    border-radius: 1px;
+    color: var(--ink-1);
+    font-family: var(--font-mono);
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.5px;
+    text-shadow: none;
+}
+[data-theme="light"] .card-label.s-signal-card {
+    color: var(--vermilion);
+    border-color: var(--vermilion);
+    background: rgba(165,28,28,0.06);
+    text-shadow: none;
+    font-weight: 700;
+}
+[data-theme="light"] .card-label.non-s-signal-card { color: var(--ink-2); text-shadow: none; }
+[data-theme="light"] .card-label.card-back-red {
+    background: rgba(165,28,28,0.14) !important;
+    border-color: rgba(165,28,28,0.5) !important;
+}
+[data-theme="light"] .card-label.card-back-blue {
+    background: rgba(30,74,142,0.14) !important;
+    border-color: rgba(30,74,142,0.5) !important;
+}
+
+/* ── 色點（卡色）── */
+[data-theme="light"] .color-chip { min-width: 22px; min-height: 22px; font-size: var(--t-base); }
+[data-theme="light"] .color-chip.red  { background: var(--vermilion); box-shadow: none; color: #fff; }
+[data-theme="light"] .color-chip.blue { background: var(--ultramarine); box-shadow: none; color: #fff; }
+
+/* ── 特殊行高亮 ── */
+[data-theme="light"] .rounds-table tr.violation-row td {
+    background: rgba(199,58,46,0.12) !important;
+    border-bottom: 2px solid var(--seal-red);
+    color: var(--seal-red) !important;
+}
+[data-theme="light"] .rounds-table tr.violation-row:hover td { background: rgba(199,58,46,0.20) !important; }
+[data-theme="light"] .rounds-table td.swap-banker-six-result {
+    color: #6e3a8a !important;
+    font-weight: 900 !important;
+    text-shadow: none;
+}
+/* 莊6點贏：終欄的「莊」字放大 28px，用朱砂紅 */
+[data-theme="light"] .rounds-table tr.banker-six-win-row td.result-cell.outcome-banker {
+    font-size: 28px !important;
+    font-weight: 900 !important;
+    font-family: var(--font-display);
+}
+[data-theme="light"] .rounds-table tr.card-count-mismatch td { background: rgba(30,74,142,0.07) !important; }
+[data-theme="light"] .rounds-table tr.card-color-violation-row td {
+    background: rgba(155,89,182,0.22) !important;
+    border-bottom: 2px solid #6a3a8a;
+}
+[data-theme="light"] .rounds-table tr.card-color-violation-row:hover td {
+    background: rgba(155,89,182,0.32) !important;
+}
+[data-theme="light"] .rounds-table td.banker-six-point { color: var(--vermilion); font-weight: 700; }
+[data-theme="light"] .rounds-table td.banker-six-point::after { color: var(--vermilion); opacity: .7; }
+
+/* ── 換牌選取高亮 ── */
+[data-theme="light"] .rounds-table tr.selected-first td {
+    background: rgba(165,28,28,0.18) !important;
+    box-shadow: inset 0 0 0 2px var(--vermilion);
+}
+[data-theme="light"] .rounds-table tr.selected-second td {
+    background: rgba(30,74,142,0.18) !important;
+    box-shadow: inset 0 0 0 2px var(--ultramarine);
+}
+[data-theme="light"] .card-label.selected-first {
+    background: var(--vermilion) !important;
+    border: 1px solid #6c0e0e !important;
+    color: var(--paper-1) !important;
+}
+[data-theme="light"] .card-label.selected-second {
+    background: var(--ultramarine) !important;
+    border: 1px solid #102e5a !important;
+    color: var(--paper-1) !important;
+}
+[data-theme="light"] .card-label.highlighted-card-pos {
+    background: rgba(168,116,42,0.30) !important;
+    border-color: var(--copper) !important;
+    box-shadow: inset 0 0 0 1px var(--copper) !important;
+    color: var(--ink-1) !important;
+    animation: none;
+}
+
+/* ── 右側 ── */
+[data-theme="light"] .right-sidebar { gap: var(--sp-2); }
 
 /* 日誌 */
 [data-theme="light"] .log-torn {
-    background: #fafbfc; border: 1px solid #d0d5dd;
-    box-shadow: inset 0 1px 3px rgba(0,0,0,0.04); color: #555;
+    background: var(--paper-1);
+    border: 1px solid var(--ink-line-2);
+    border-radius: 1px;
+    padding: var(--sp-4) var(--sp-3) var(--sp-2);
+    color: var(--ink-2);
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    line-height: 1.7;
+    box-shadow: none;
+    min-height: 160px;
 }
-[data-theme="light"] .log-torn::before { color: #999; border-bottom: 1px solid #eee; }
-[data-theme="light"] .log-torn .success { color: var(--phosphor); text-shadow: none; }
-[data-theme="light"] .log-torn .error   { color: var(--red-alert); text-shadow: none; }
-[data-theme="light"] .log-torn .info    { color: var(--cyan); }
+[data-theme="light"] .log-torn::before {
+    content: '紀錄  ·  LOG';
+    color: var(--ink-3);
+    font-family: var(--font-label);
+    font-size: var(--t-2xs);
+    font-weight: 700;
+    letter-spacing: 4px;
+    border-bottom: 1px solid var(--ink-line);
+    padding-bottom: 4px;
+    top: 4px; left: var(--sp-3); right: var(--sp-3);
+}
+[data-theme="light"] .log-torn .success { color: var(--jade); text-shadow: none; }
+[data-theme="light"] .log-torn .error   { color: var(--seal-red); text-shadow: none; }
+[data-theme="light"] .log-torn .info    { color: var(--ultramarine); }
 
 /* 小網格 */
-[data-theme="light"] .mini-grid-wrapper { background: #fff; border: 1px solid #d0d5dd; }
-[data-theme="light"] .grid-preview .cell { background: rgba(0,0,0,0.01); border: 1px solid #eee; }
+[data-theme="light"] .mini-grid-wrapper {
+    background: var(--paper-1);
+    border: 1px solid var(--ink-line-2);
+    border-radius: 1px;
+    padding: var(--sp-2);
+}
+[data-theme="light"] .grid-preview .cell {
+    background: var(--paper-1);
+    border: 1px solid var(--ink-line);
+    color: var(--ink-2);
+    font-family: var(--font-mono);
+    font-size: var(--t-2xs);
+    height: 18px;
+}
+[data-theme="light"] .grid-preview .cell.result-banker { color: var(--vermilion); font-weight: 700; }
+[data-theme="light"] .grid-preview .cell.result-player { color: var(--ultramarine); font-weight: 700; }
+[data-theme="light"] .grid-preview .cell.result-tie    { color: var(--jade); font-weight: 700; }
+[data-theme="light"] .grid-preview .cell.signal-match  { color: var(--vermilion); font-weight: 700; }
+[data-theme="light"] .grid-preview .cell.card-red  { background: rgba(165,28,28,0.10); }
+[data-theme="light"] .grid-preview .cell.card-blue { background: rgba(30,74,142,0.10); }
+[data-theme="light"] .grid-placeholder {
+    color: var(--ink-3);
+    font-family: var(--font-label);
+    font-size: var(--t-xs);
+}
 
 /* 訊號摘要 */
-[data-theme="light"] .signal-summary { background: #fff; border: 1px solid #d0d5dd; }
-[data-theme="light"] .stats-table th { background: rgba(10,138,80,0.08); }
-[data-theme="light"] .stats-table th, [data-theme="light"] .stats-table td { border: 1px solid #e0e0e0; }
+[data-theme="light"] .signal-summary {
+    background: var(--paper-1);
+    border: 1px solid var(--ink-line-2);
+    border-radius: 1px;
+    padding: var(--sp-3);
+}
+[data-theme="light"] .stats-table { font-family: var(--font-mono); }
+[data-theme="light"] .stats-table th {
+    background: var(--paper-3);
+    color: var(--ink-1);
+    font-family: var(--font-label);
+    font-size: var(--t-2xs);
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: none;
+    padding: var(--sp-1) var(--sp-2);
+    border: 1px solid var(--ink-line-2);
+}
+[data-theme="light"] .stats-table td {
+    color: var(--ink-1);
+    font-size: var(--t-xs);
+    padding: var(--sp-1) var(--sp-2);
+    border: 1px solid var(--ink-line);
+}
+[data-theme="light"] .stats-table tr:last-child td {
+    background: var(--paper-3);
+    font-weight: 700;
+}
+[data-theme="light"] .stats-table td strong { color: var(--vermilion); font-weight: 700; }
+[data-theme="light"] .stats-total {
+    color: var(--ink-2);
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    margin-top: var(--sp-2);
+}
+[data-theme="light"] .stats-total strong { color: var(--vermilion); }
 
-/* 回復分析 */
-[data-theme="light"] .recovery-display {
-    background: var(--bg-panel); border: 1px solid #d0d5dd; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-}
-[data-theme="light"] .recovery-display .main-stat { text-shadow: none; }
-[data-theme="light"] .recovery-display .rating-stars { text-shadow: none; }
-[data-theme="light"] .recovery-display .left-col { border-right: 1px solid #e0e0e0; }
-[data-theme="light"] .recovery-display .sub-stat-row { border-bottom: 1px solid #f0f0f0; }
-[data-theme="light"] .recovery-display .sub-stat-label { color: var(--phosphor); }
-
-/* 回復輸入 */
-[data-theme="light"] .recovery-input {
-    background: #fff; border: 1px solid #d0d5dd; color: #333;
-}
-[data-theme="light"] .recovery-input:focus { border-color: var(--phosphor); box-shadow: 0 0 0 2px rgba(10,138,80,0.15); }
-[data-theme="light"] .recovery-input-label { color: var(--phosphor); }
-[data-theme="light"] .recovery-optimize-btn {
-    border: 1px solid rgba(0,120,184,0.3); background: rgba(0,120,184,0.06); text-shadow: none;
-}
-[data-theme="light"] .recovery-rollback-btn {
-    border: 1px solid #d0d5dd; background: #f5f5f5; color: #666;
-}
-
-/* 切牌 */
-[data-theme="light"] .cut-card input {
-    background: #fff; border: 1px solid #d0d5dd; color: #333; text-shadow: none;
-}
-[data-theme="light"] .cut-card input:focus { border-color: var(--phosphor); box-shadow: 0 0 0 2px rgba(10,138,80,0.15); }
-[data-theme="light"] .cut-card button {
-    background: rgba(10,138,80,0.06); border: 1px solid rgba(10,138,80,0.25);
-    color: var(--phosphor); text-shadow: none; cursor: pointer;
-}
-[data-theme="light"] .cut-card button:hover { background: rgba(10,138,80,0.12); }
-
-/* 浮動計算視窗 */
+/* ── 浮動計算視窗 ── */
 [data-theme="light"] .floating-widget {
-    background: rgba(255,255,255,0.98); border: 1px solid #d0d5dd;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+    background: var(--paper-1);
+    border: 1px solid var(--ink-1);
+    border-radius: 1px;
+    box-shadow: 6px 6px 0 var(--ink-line-2);
+    padding: var(--sp-3);
 }
-[data-theme="light"] .widget-title { color: var(--phosphor); text-shadow: none; }
+[data-theme="light"] .widget-header { border-bottom: 1px solid var(--ink-line); padding-bottom: var(--sp-2); margin-bottom: var(--sp-2); }
+[data-theme="light"] .widget-title {
+    color: var(--ink-1);
+    font-family: var(--font-display);
+    font-size: var(--t-md);
+    font-weight: 700;
+    text-shadow: none;
+    letter-spacing: 3px;
+    text-transform: none;
+}
+[data-theme="light"] .widget-content { color: var(--ink-1); }
 [data-theme="light"] .widget-content .card-input {
-    background: #fff; border: 1px solid #d0d5dd; color: #333;
+    background: var(--paper-1);
+    border: 1px solid var(--ink-line-2);
+    border-radius: 1px;
+    color: var(--ink-1);
+    font-family: var(--font-mono);
+    font-size: var(--t-md);
+    font-weight: 600;
 }
-[data-theme="light"] .widget-content .result-strip { background: #f5f6f8; border: 1px solid #e0e0e0; }
-[data-theme="light"] .widget-content .result-value { background: #fff; }
-[data-theme="light"] .widget-content .result-player { color: var(--cyan); text-shadow: none; background: rgba(0,120,184,0.06); }
-[data-theme="light"] .widget-content .result-banker { color: var(--red-alert); text-shadow: none; background: rgba(217,41,41,0.06); }
-[data-theme="light"] .widget-action { background: #f5f5f5; border: 1px solid #d0d5dd; color: #555; }
-[data-theme="light"] .widget-action:hover { background: rgba(10,138,80,0.08); color: var(--phosphor); }
+[data-theme="light"] .widget-content .card-input:focus {
+    outline: none;
+    border-color: var(--ink-1);
+    box-shadow: 0 0 0 2px var(--paper-3);
+}
+[data-theme="light"] .widget-content .card-input.disabled {
+    background: var(--paper-3); color: var(--ink-3); border-color: var(--ink-line);
+}
+[data-theme="light"] .widget-content .result-strip {
+    background: var(--paper-2);
+    border: 1px solid var(--ink-line);
+    border-radius: 1px;
+}
+[data-theme="light"] .widget-content .result-value {
+    background: var(--paper-1);
+    color: var(--ink-1);
+    font-family: var(--font-display);
+    font-size: var(--t-lg);
+    font-weight: 700;
+    text-shadow: none;
+    letter-spacing: 1px;
+}
+[data-theme="light"] .widget-content .result-player,
+[data-theme="light"] .widget-content .result-value.win-P {
+    color: var(--ultramarine);
+    background: rgba(30,74,142,0.08);
+    text-shadow: none;
+}
+[data-theme="light"] .widget-content .result-banker,
+[data-theme="light"] .widget-content .result-value.win-B {
+    color: var(--vermilion);
+    background: rgba(165,28,28,0.08);
+    text-shadow: none;
+}
+[data-theme="light"] .widget-content .result-value.win-T {
+    color: var(--jade);
+    background: rgba(31,90,62,0.10);
+}
+[data-theme="light"] .widget-action {
+    background: var(--paper-1);
+    border: 1px solid var(--ink-line-2);
+    color: var(--ink-2);
+    font-family: var(--font-label);
+    font-size: var(--t-xs);
+    font-weight: 600;
+    letter-spacing: 1px;
+}
+[data-theme="light"] .widget-action:hover {
+    background: var(--ink-1); color: var(--paper-1); border-color: var(--ink-1);
+}
+[data-theme="light"] .widget-close { background: var(--paper-1); border-color: var(--ink-line-2); color: var(--ink-3); }
+[data-theme="light"] .widget-close:hover { background: var(--seal-red); color: var(--paper-1); border-color: var(--seal-red); }
+[data-theme="light"] .widget-reset { background: var(--paper-1); color: var(--seal-red); border-color: var(--seal-red); }
+[data-theme="light"] .widget-reset:hover { background: var(--seal-red); color: var(--paper-1); }
 
-/* 凍結網格 */
-[data-theme="light"] .frozen-grid-wrapper { background: rgba(10,138,80,0.04); border: 1px solid #d0d5dd; }
-[data-theme="light"] .frozen-grid-title { color: var(--phosphor); }
-
-/* 特殊行高亮 */
-[data-theme="light"] .rounds-table tr.violation-row td { background: rgba(217,41,41,0.13) !important; border-bottom: 2px solid rgba(217,41,41,0.45); color: #8b1a1a !important; }
-[data-theme="light"] .rounds-table td.swap-banker-six-result { color: #8a2be2 !important; text-shadow: none; }
-[data-theme="light"] .rounds-table tr.banker-six-win-row td { background: rgba(10,138,80,0.18) !important; border-bottom: 2px solid rgba(10,138,80,0.4); }
-[data-theme="light"] .rounds-table tr.banker-six-win-row:hover td { background: rgba(10,138,80,0.25) !important; }
-[data-theme="light"] .rounds-table tr.card-count-mismatch td { background: rgba(0,120,184,0.06) !important; }
-[data-theme="light"] .rounds-table tr.violation-row:hover td { background: rgba(217,41,41,0.18) !important; }
-[data-theme="light"] .rounds-table tr.card-color-violation-row td { background: rgba(196,127,0,0.12) !important; border-bottom: 2px solid rgba(196,127,0,0.4); }
-
-/* 換牌選取高亮 — 第一張紅色、第二張藍色 */
-[data-theme="light"] .rounds-table tr.selected-first td {
-    background: rgba(220,40,40,0.22) !important;
-    box-shadow: inset 0 0 0 3px #cc2222;
+/* ── 凍結網格 ── */
+[data-theme="light"] .frozen-grid-wrapper {
+    background: var(--paper-2);
+    border: 1px solid var(--ink-line);
+    border-radius: 1px;
+    box-shadow: none;
 }
-[data-theme="light"] .rounds-table tr.selected-second td {
-    background: rgba(0,80,200,0.22) !important;
-    box-shadow: inset 0 0 0 3px #0055cc;
-}
-[data-theme="light"] .card-label.selected-first {
-    background: #cc2222 !important; border: 2px solid #990000 !important; color: #fff !important;
-}
-[data-theme="light"] .card-label.selected-second {
-    background: #0055cc !important; border: 2px solid #003399 !important; color: #fff !important;
+[data-theme="light"] .frozen-grid-title {
+    color: var(--ink-2);
+    font-family: var(--font-label);
+    font-size: var(--t-2xs);
+    letter-spacing: 3px;
+    text-transform: none;
 }
 
-/* 主題切換按鈕 — 明亮模式下的樣式 */
+/* ── 主題切換按鈕 ── */
 [data-theme="light"] .theme-toggle {
-    border: 1px solid #d0d5dd; background: #fff; color: #333;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    width: 38px; height: 38px;
+    background: var(--paper-1);
+    border: 1px solid var(--ink-1);
+    color: var(--ink-1);
+    border-radius: 50%;
+    box-shadow: 2px 2px 0 var(--ink-line-2);
+    font-size: var(--t-md);
 }
-[data-theme="light"] .theme-toggle:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
+[data-theme="light"] .theme-toggle:hover { background: var(--ink-1); color: var(--paper-1); transform: none; box-shadow: 1px 1px 0 var(--ink-line-2); }
 [data-theme="light"] .theme-toggle .icon-dark  { display: none; }
 [data-theme="light"] .theme-toggle .icon-light { display: inline; }
 
@@ -1044,58 +1931,60 @@ tr.highlighted-row { background: rgba(255,170,0,0.05) !important; }
 
         <!-- ===== 第一行：花色 + 訊號張數 + 清空 + GO + 圓餅圖 + 切牌 ===== -->
         <div class="top-controls">
-            <!-- 花色選擇器 -->
-            <div class="suit-selector">
-                <a class="suit-button" data-value="♠"><span class="suit-symbol">♠</span></a>
-                <a class="suit-button" data-value="♥"><span class="suit-symbol">♥</span></a>
-                <a class="suit-button" data-value="♦"><span class="suit-symbol">♦</span></a>
-                <a class="suit-button" data-value="♣"><span class="suit-symbol">♣</span></a>
+            <!-- 卡片1：花色 + 主要動作按鈕 -->
+            <div class="panel panel-suits-actions">
+                <div class="suit-selector">
+                    <a class="suit-button" data-value="♠"><span class="suit-symbol">♠</span></a>
+                    <a class="suit-button" data-value="♥"><span class="suit-symbol">♥</span></a>
+                    <a class="suit-button" data-value="♦"><span class="suit-symbol">♦</span></a>
+                    <a class="suit-button" data-value="♣"><span class="suit-symbol">♣</span></a>
+                </div>
+                <div class="main-actions">
+                    <button class="generate-stop-btn" id="generateBtn">生成</button>
+                    <button type="button" id="stopGenerateBtn" class="generate-stop-btn" disabled
+                        onclick="stopGenerateShoe()">停止</button>
+                    <button type="button" id="clearSignalBtn" class="generate-stop-btn clear-signal-btn"
+                        onclick="clearSignalConfig()">清除</button>
+                </div>
             </div>
 
-            <!-- 訊號張數（數字疊在卷軸圖片上） -->
-            <div class="signal-count-wrapper">
+            <!-- 卡片2：訊號張數圓章 + 預設按鈕 -->
+            <div class="panel signal-count-wrapper">
                 <div class="signal-count-card">
                     <img src="suit/張數.png" alt="訊號牌張數">
                     <span id="signalCardCount" class="signal-count-value">0</span>
                 </div>
                 <div id="signalConfigDisplay" class="signal-config-display"></div>
+                <label class="mixed-color-toggle" title="勾選後牌靴前4張卡色允許 BBBR / RRRB / BBRR / RRBB 四種">
+                    <input type="checkbox" id="mixedColorModeToggle">
+                    <span>混和卡色</span>
+                </label>
+                <div class="signal-presets">
+                    <button type="button" class="generate-stop-btn signal-preset-btn" onclick="setSignalPreset('allA2')" title="全花色 A 2">A2</button>
+                    <button type="button" class="generate-stop-btn signal-preset-btn" onclick="setSignalPreset('hd0')" title="♥♦ 0點 (10JQK)">♥0</button>
+                </div>
             </div>
 
-            <!-- 訊號牌快速設定 -->
-            <div style="display:flex; flex-direction:column; gap:3px;">
-                <button type="button" class="generate-stop-btn signal-preset-btn" onclick="setSignalPreset('allA2')" title="全花色 A 2">A2</button>
-                <button type="button" class="generate-stop-btn signal-preset-btn" onclick="setSignalPreset('hd0')" title="♥♦ 0點 (10JQK)">♥0</button>
-            </div>
-
-            <!-- GO 按鈕 -->
-            <div style="display:flex; flex-direction:column; gap:4px;">
-                <button class="generate-stop-btn" id="generateBtn">生成</button>
-                <button type="button" id="stopGenerateBtn" class="generate-stop-btn" disabled
-                    onclick="stopGenerateShoe()">停止</button>
-                <button type="button" id="clearSignalBtn" class="generate-stop-btn clear-signal-btn"
-                    onclick="clearSignalConfig()">清除</button>
-            </div>
-
-            <!-- 回復分析檢查條件設定 -->
-            <div class="recovery-check-inputs">
+            <!-- 卡片3：回復分析檢查條件設定 -->
+            <div class="panel recovery-check-inputs">
                 <div class="recovery-input-item">
                     <label class="recovery-input-label">平均上限</label>
-                    <input type="number" id="avgRecoveryLimit" class="recovery-input" step="0.1" min="0" value="4.5"
+                    <input type="number" id="avgRecoveryLimit" class="recovery-input" step="0.1" min="0" value="0"
                         placeholder="0=關閉">
                 </div>
                 <div class="recovery-input-item">
                     <label class="recovery-input-label">莊閒差距</label>
-                    <input type="number" id="maxSideLimit" class="recovery-input" min="0" value="5"
+                    <input type="number" id="maxSideLimit" class="recovery-input" min="0" value=""
                         placeholder="空白=不檢查">
                 </div>
                 <div class="recovery-input-item">
                     <label class="recovery-input-label">和局上限</label>
-                    <input type="number" id="maxTieLimit" class="recovery-input" min="0" value="2" placeholder="空白=不檢查">
+                    <input type="number" id="maxTieLimit" class="recovery-input" min="0" value="3" placeholder="空白=不檢查">
                 </div>
                 <div class="recovery-input-item">
                     <label class="recovery-input-label">4張局上限%</label>
                     <input type="number" id="maxFourCardRate" class="recovery-input" min="0" max="100" step="0.1"
-                        value="40" placeholder="空白=不檢查">
+                        value="" placeholder="空白=不檢查">
                 </div>
                 <div class="recovery-input-item">
                     <label class="recovery-input-label">7點逆轉上限</label>
@@ -1104,8 +1993,8 @@ tr.highlighted-row { background: rgba(255,170,0,0.05) !important; }
                 </div>
                 <div class="recovery-input-item">
                     <label class="recovery-input-label">對調莊6局數</label>
-                    <input type="number" id="swapBanker6Target" class="recovery-input" min="0" value="10"
-                        placeholder="0=不設">
+                    <input type="number" id="swapBanker6Target" class="recovery-input" min="0" value="9"
+                        placeholder="0=不出現">
                 </div>
                 <div class="recovery-input-item" style="display:flex;align-items:center;gap:4px;">
                     <input type="checkbox" id="skipBanker6">
@@ -1113,14 +2002,16 @@ tr.highlighted-row { background: rgba(255,170,0,0.05) !important; }
                 </div>
             </div>
 
-            <!-- 回復分析顯示區域 (取代原本的按鈕) -->
-            <div id="recoveryDisplay" class="recovery-display hidden">
+            <!-- 卡片4：回復分析顯示 -->
+            <div id="recoveryDisplay" class="panel recovery-display hidden">
                 <div class="left-col">
                     <div class="main-stat">
                         <span id="recoveryAvg">3.9 局</span>
                     </div>
                     <div class="rating-stars" id="recoveryStars">⭐⭐⭐⭐</div>
                     <div class="rating-text" id="recoveryRatingText" style="margin-left:0; margin-top:2px;">良好</div>
+                    <div class="max-cost-row">最大消耗<span id="recoveryMaxCardsLeft">--</span>張</div>
+                    <div class="max-cost-row">最大消耗<span id="recoveryMaxRoundsLeft">--</span>局</div>
                 </div>
                 <div class="right-col">
                     <!-- 隱藏：平均消耗、立即回復、最大消耗、佔比 -->
@@ -1152,41 +2043,45 @@ tr.highlighted-row { background: rgba(255,170,0,0.05) !important; }
                         <span class="sub-stat-label" style="color:#b06aff; font-size:12px;">局號:</span>
                         <span id="recoverySwapB6Rounds" style="color:#b06aff; font-size:12px; word-break:break-all;">--</span>
                     </div>
+                    <div class="sub-stat-row" style="margin-top:4px; border-top:1px solid rgba(0,255,136,0.15); padding-top:4px;">
+                        <span class="sub-stat-label" style="color:#ff7a59;">莊6點贏:</span>
+                        <span id="recoveryBanker6Count" style="color:#ff7a59;">-- 局</span>
+                    </div>
+                    <div class="sub-stat-row">
+                        <span class="sub-stat-label" style="color:#ff7a59; font-size:12px;">局號:</span>
+                        <span id="recoveryBanker6Rounds" style="color:#ff7a59; font-size:12px; word-break:break-all;">--</span>
+                    </div>
                 </div>
             </div>
 
-            <!-- 右側工具區：圓餅圖 + 切牌 -->
-            <div class="top-right-tools">
-                <!-- HUD 莊閒和統計條 -->
-                <div class="hud-bars" id="resultCircle">
-                    <div class="hud-bar-row">
-                        <span class="hud-bar-label hud-banker">莊</span>
-                        <div class="hud-bar-track">
-                            <div class="hud-bar-fill hud-banker-fill" id="hudBankerBar"></div>
-                        </div>
-                        <span class="hud-bar-value hud-banker" id="circleBankerLabel">0</span>
+            <!-- 卡片5：HUD 莊閒和統計條 -->
+            <div class="panel hud-bars" id="resultCircle">
+                <div class="hud-bar-row">
+                    <span class="hud-bar-label hud-banker">莊</span>
+                    <div class="hud-bar-track">
+                        <div class="hud-bar-fill hud-banker-fill" id="hudBankerBar"></div>
                     </div>
-                    <div class="hud-bar-row">
-                        <span class="hud-bar-label hud-player">閒</span>
-                        <div class="hud-bar-track">
-                            <div class="hud-bar-fill hud-player-fill" id="hudPlayerBar"></div>
-                        </div>
-                        <span class="hud-bar-value hud-player" id="circlePlayerLabel">0</span>
-                    </div>
-                    <div class="hud-bar-row">
-                        <span class="hud-bar-label hud-tie">和</span>
-                        <div class="hud-bar-track">
-                            <div class="hud-bar-fill hud-tie-fill" id="hudTieBar"></div>
-                        </div>
-                        <span class="hud-bar-value hud-tie" id="circleTieLabel">0</span>
-                    </div>
-                    <div class="hud-total-row">
-                        <span class="hud-total-label">TOTAL</span>
-                        <span class="hud-total-value" id="circleTotal">0</span>
-                    </div>
+                    <span class="hud-bar-value hud-banker" id="circleBankerLabel">0</span>
                 </div>
-
-                <!-- 切牌 -->
+                <div class="hud-bar-row">
+                    <span class="hud-bar-label hud-player">閒</span>
+                    <div class="hud-bar-track">
+                        <div class="hud-bar-fill hud-player-fill" id="hudPlayerBar"></div>
+                    </div>
+                    <span class="hud-bar-value hud-player" id="circlePlayerLabel">0</span>
+                </div>
+                <div class="hud-bar-row">
+                    <span class="hud-bar-label hud-tie">和</span>
+                    <div class="hud-bar-track">
+                        <div class="hud-bar-fill hud-tie-fill" id="hudTieBar"></div>
+                    </div>
+                    <span class="hud-bar-value hud-tie" id="circleTieLabel">0</span>
+                </div>
+                <div class="hud-total-row">
+                    <span class="hud-total-label">TOTAL</span>
+                    <span class="hud-total-value" id="circleTotal">0</span>
+                </div>
+                <!-- 切牌 / 定位（從原獨立卡片移入） -->
                 <div class="cut-card">
                     <input id="cutPos" type="number" min="0" placeholder="張數">
                     <button id="btnCut">切牌</button>
@@ -1194,6 +2089,9 @@ tr.highlighted-row { background: rgba(255,170,0,0.05) !important; }
                     <button id="btnHighlightCard">定位</button>
                 </div>
             </div>
+
+            <!-- 卡片7：訊號摘要表（從右下角搬到頂部） -->
+            <div class="panel signal-summary" id="signalSummary"></div>
         </div>
 
         <!-- ===== 第二行：數字牌選擇（A 到 K） ===== -->
@@ -1233,10 +2131,6 @@ tr.highlighted-row { background: rgba(255,170,0,0.05) !important; }
                 <div class="violation-card">
                     <div class="violation-label">其他違規</div>
                     <div class="violation-detail" id="otherViolationDetail">無</div>
-                </div>
-                <div class="violation-card" id="vRoundViolationCard">
-                    <div class="violation-label" style="color:#b06aff;">V局♠違規 <label style="font-size:11px;font-weight:normal;cursor:pointer;"><input type="checkbox" id="showVRoundViolation" style="vertical-align:middle;" onchange="if(typeof refreshViolationStats==='function')refreshViolationStats();"> 開</label></div>
-                    <div class="violation-detail" id="vRoundViolationDetail" style="color:#b06aff;display:none;">無</div>
                 </div>
             </div>
         </div>
@@ -1279,6 +2173,7 @@ tr.highlighted-row { background: rgba(255,170,0,0.05) !important; }
                 <input type="file" id="importFileInput" accept=".xlsx" style="display:none">
                 <button class="tool-btn" id="btnValidate">驗證</button>
                 <button class="tool-btn" id="btnSpeech">語音</button>
+                <button class="tool-btn" id="btnPointStats" onclick="window.open('point_stats.html','_blank')">點數統計</button>
                 <button class="tool-btn" id="btnDealer">發牌</button>
                 <button class="tool-btn" id="btnApplyTools">計算</button>
                 <label class="swap-preview-toggle">
@@ -1309,9 +2204,6 @@ tr.highlighted-row { background: rgba(255,170,0,0.05) !important; }
                         <div class="grid-placeholder">尚無牌靴資料</div>
                     </div>
                 </div>
-
-                <!-- 訊號摘要 -->
-                <div class="signal-summary" id="signalSummary"></div>
             </div>
         </div>
     </div>
@@ -1419,12 +2311,36 @@ tr.highlighted-row { background: rgba(255,170,0,0.05) !important; }
             if (typeof updateViolationUI === 'function') {
                 updateViolationUI(null);
             }
+
+            // ===== 混和卡色模式勾選框 =====
+            const mixedToggle = document.getElementById('mixedColorModeToggle');
+            if (mixedToggle) {
+                try {
+                    const _mmLs = localStorage.getItem('card_color_mixed_mode');
+                    mixedToggle.checked = (_mmLs === null) ? true : (_mmLs === '1');
+                } catch (e) {
+                    mixedToggle.checked = true;
+                }
+                mixedToggle.addEventListener('change', () => {
+                    if (typeof persistCardColorMixedMode === 'function') {
+                        persistCardColorMixedMode(mixedToggle.checked);
+                    }
+                    if (typeof log === 'function') {
+                        log(
+                            mixedToggle.checked
+                                ? '卡色模式：混和（BBBR / RRRB / BBRR / RRBB）'
+                                : '卡色模式：標準（BBBR / RRRB）',
+                            'info'
+                        );
+                    }
+                });
+            }
         });
     </script>
 
     <!-- 載入核心邏輯（這些檔案需要你自己提供） -->
-    <script src="signals.js?v=7"></script>
-    <script src="signals_ui.js?v=7"></script>
+    <script src="signals.js?v=12"></script>
+    <script src="signals_ui.js?v=13"></script>
     <script src="smart_reorder_dialog.js"></script>
     <script src="swap_preview.js"></script>
     <script src="traverse.js"></script>
@@ -1471,7 +2387,7 @@ tr.highlighted-row { background: rgba(255,170,0,0.05) !important; }
         (function(){
             var STORAGE_KEY = 'at-settings';
             var INPUT_IDS = ['avgRecoveryLimit','maxSideLimit','maxTieLimit','maxFourCardRate','max7PtReversal','swapBanker6Target'];
-            var CHECK_IDS = ['skipBanker6','showVRoundViolation'];
+            var CHECK_IDS = ['skipBanker6'];
 
             // 讀取上次設定
             try {

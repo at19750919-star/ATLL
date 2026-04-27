@@ -684,12 +684,6 @@ function shouldSkipSensitiveRound(round) {
         }
     }
 
-    // 原始莊6閒≤5：一律排除（新規則：不要有直接莊6贏的局）
-    const originalHandInfo = computeRoundHands(round.cards || []);
-    if (originalHandInfo.bankerTotal === 6 && originalHandInfo.playerTotal <= 5) {
-        return true;
-    }
-
     // 「避開莊6點贏」勾選時，連 B6 局（對調後莊6贏）也一併排除
     const skipBanker6El = document.getElementById('skipBanker6');
     const skipBanker6 = skipBanker6El ? skipBanker6El.checked : false;
@@ -759,18 +753,6 @@ function ensureNoBannedBankerSixRound(rounds, segment) {
         if (isBannedThirdCardPattern(round)) {
             const idx = (typeof round.display_index === 'number') ? round.display_index : (i + 1);
             throw new Error(`第 ${idx} 局觸發禁止補牌組合（莊初始3且閒補8，或莊初始6且閒補6/7），重新生成`);
-        }
-        const handInfo = computeRoundHands(round.cards || []);
-        const bankerTotal = handInfo ? handInfo.bankerTotal : null;
-        const playerTotal = handInfo ? handInfo.playerTotal : null;
-        if (typeof bankerTotal === 'number' && typeof playerTotal === 'number') {
-            if (bankerTotal === 6 && playerTotal <= 5) {
-                const idx = (typeof round.display_index === 'number') ? round.display_index : (i + 1);
-                const cardsLabel = Array.isArray(round.cards)
-                    ? round.cards.map(card => (card && typeof card.short === 'function') ? card.short() : '').join(', ')
-                    : '';
-                throw new Error(`第 ${idx} 局為莊家6點且閒家 ≤5點（牌組: ${cardsLabel}），重新生成`);
-            }
         }
     }
     // 連續莊/閒大於 7 局一律重新生成
@@ -1479,14 +1461,8 @@ function ensureTRoundHasNoSignal(rounds, roundIndex, sRoundSet) {
         if (!r || !Array.isArray(r.cards)) return false;
         return r.cards.some(c => c && typeof c.isSignalCard === 'function' && c.isSignalCard());
     };
-    // S 對調永遠不可製造出「原始 cards 是莊6閒≤5」的局（不受 skipBanker6 UI 控制）
-    const _wouldSwapB6 = (rd) => {
-        if (!rd || !Array.isArray(rd.cards) || rd.cards.length < 4) return false;
-        const tmp = rd.cards.map(c => c.clone());
-        [tmp[0], tmp[1]] = [tmp[1], tmp[0]];
-        const hi = computeRoundHands(tmp);
-        return hi && hi.bankerTotal === 6 && hi.playerTotal <= 5;
-    };
+    // S 對調 B6 限制已解除：永遠允許
+    const _wouldSwapB6 = (rd) => false;
     const enforceRuleForPrevIdx = (prevIdx) => {
         if (!Array.isArray(rounds) || rounds.length === 0) return false;
         const i = ((prevIdx % n) + n) % n;
@@ -1583,44 +1559,33 @@ function ensureTRoundHasNoSignal(rounds, roundIndex, sRoundSet) {
 }
 
 // 建立牌靴整體統計（勝率、段落、訊號牌數）
+// 直接統計各 round.cards 中實際存在的每一張牌（不去重），
+// 確保「總張數」等於牌靴實際使用的牌數。
 function computeDeckSummary(rounds) {
     if (!Array.isArray(rounds) || rounds.length === 0) return null;
-    const seenUnique = new Set(); // 避免重複計算同一張實體卡牌
-    const uniqueCards = [];
-    const pushCard = (card) => {
-        if (!card) return;
-        const pos = card.pos;
-        if (pos !== undefined && pos !== null) {
-            if (seenUnique.has(pos)) return;
-            seenUnique.add(pos);
-        } else {
-            const fallbackKey = `${card.suit || ''}_${card.rank || ''}_${card.label || ''}_${card.short ? card.short() : ''}`;
-            if (seenUnique.has(fallbackKey)) return;
-            seenUnique.add(fallbackKey);
-        }
-        uniqueCards.push(card);
-    };
-    rounds.forEach(round => {
-        (round.cards || []).forEach(pushCard);
-    });
     const byRankSuit = {}; // 花色 + 點數 -> 張數
     const cardsByRankSuit = {}; // 花色 + 點數 -> 實際卡牌陣列,用來計算紅背/藍背
     const suitTotals = {}; // 每個花色的總張數
-    uniqueCards.forEach(card => {
-        const suitLetter = suitLetterFromSymbol(card.suit);
-        const rank = card.rank || null;
-        if (!suitLetter || !rank) return;
-        const key = `${suitLetter}_${rank}`;
-        byRankSuit[key] = (byRankSuit[key] || 0) + 1;
-        if (!cardsByRankSuit[key]) cardsByRankSuit[key] = [];
-        cardsByRankSuit[key].push(card);
-        suitTotals[suitLetter] = (suitTotals[suitLetter] || 0) + 1;
+    let totalCards = 0;
+    rounds.forEach(round => {
+        (round.cards || []).forEach(card => {
+            if (!card) return;
+            totalCards++;
+            const suitLetter = suitLetterFromSymbol(card.suit);
+            const rank = card.rank || null;
+            if (!suitLetter || !rank) return;
+            const key = `${suitLetter}_${rank}`;
+            byRankSuit[key] = (byRankSuit[key] || 0) + 1;
+            if (!cardsByRankSuit[key]) cardsByRankSuit[key] = [];
+            cardsByRankSuit[key].push(card);
+            suitTotals[suitLetter] = (suitTotals[suitLetter] || 0) + 1;
+        });
     });
     return {
         by_rank_suit: byRankSuit,
         suit_totals: suitTotals,
         cards_by_rank_suit: cardsByRankSuit,
-        total_cards: uniqueCards.length
+        total_cards: totalCards
     };
 }
 
@@ -1649,13 +1614,8 @@ function analyze_signal_cards(rounds, options = {}) {
     const avoidBanker6 = skipB6El ? skipB6El.checked : false;
     let banker6Skipped = 0;
 
-    const wouldSwapProduceBanker6 = (round) => {
-        if (!round || !Array.isArray(round.cards) || round.cards.length < 4) return false;
-        const swapped = round.cards.map(c => c.clone());
-        [swapped[0], swapped[1]] = [swapped[1], swapped[0]];
-        const info = computeRoundHands(swapped);
-        return info && info.bankerTotal === 6 && info.playerTotal <= 5;
-    };
+    // 對調後 B6 限制已解除：永遠允許
+    const wouldSwapProduceBanker6 = (round) => false;
 
     for (let i = 0; i < rounds.length - 1; i++) {
         const current_round = rounds[i];
@@ -2762,18 +2722,15 @@ function verifyShoeRules(rounds, options = {}) {
         const true_result_current = getTrueResult(current_round);
         const currentHandInfo = computeRoundHands(current_round.cards || []);
 
+        // 莊6點贏（原始牌型即為莊家 6 點且閒 ≤ 5）
+        if (currentHandInfo && currentHandInfo.bankerTotal === 6 && currentHandInfo.playerTotal <= 5) {
+            bankerSixIndexes.add(i);
+        }
+
         // 規則 1: 檢查「結果欄位」和「實際點數」是否一致
         if (current_round.result !== true_result_current) {
             log(`違規(1): 第 ${round_num} 局 結果欄位是「${current_round.result}」，但實際點數計算為「${true_result_current}」`, 'error');
             errors++;
-        }
-
-        // 規則 1-2: 原始順序即為莊6且閒≤5，直接視為違規
-        if (currentHandInfo && currentHandInfo.bankerTotal === 6 && currentHandInfo.playerTotal <= 5) {
-            log(`違規: 第 ${round_num} 局原始牌型為莊6且閒 ≤5，請調整或重新生成`, 'error');
-            errors++;
-            violationRoundIndexes.add(i);
-            bankerSixIndexes.add(i);
         }
 
         // 提醒：對調後若成為莊6且閒≤5，僅標記不排除
@@ -2903,16 +2860,6 @@ function verifyShoeRules(rounds, options = {}) {
             else if (expectedResult === '莊' && swapped === '莊') shouldSwap = true;
             else if (expectedResult === '非莊' && swapped && swapped !== '莊') shouldSwap = true;
 
-            // 檢查對調後是否會產生莊6點贏（無條件擋，不受 UI 控制）
-            if (shouldSwap) {
-                const tempCards = next_round.cards.map(c => c.clone());
-                [tempCards[0], tempCards[1]] = [tempCards[1], tempCards[0]];
-                const hi = computeRoundHands(tempCards);
-                if (hi && hi.bankerTotal === 6 && hi.playerTotal <= 5) {
-                    shouldSwap = false;
-                    log(`⚠️ 第 ${nextIdx + 1} 局對調後會產生莊6點贏，跳過修復`, 'warn');
-                }
-            }
             if (shouldSwap) {
                 executeCardSwap(next_round);
                 if (typeof recomputeRoundOutcome === 'function') recomputeRoundOutcome(next_round);
@@ -3089,6 +3036,8 @@ async function generateShoe() {
     if (typeof window !== 'undefined') {
         window.__isGeneratingShoe = true;
         window.__stopGenerateRequested = false;
+        // 重新生成 → 取消「匯入模式」的違規檢查跳過
+        window.__importedShoeMode = false;
     }
 
     // 檢查是否為自動重新生成
@@ -3317,39 +3266,7 @@ async function generateShoe() {
                 }
             }
 
-            // 8.5 和局間距檢查：相鄰和局至少 5 局，才能在每個和局後放 3 個 B6 而不撞到下一組 T-和
-            try {
-                const _tieIdxs = [];
-                roundsToCheck.forEach((rd, idx) => {
-                    if (rd && rd.result === '和') _tieIdxs.push(idx);
-                });
-                let _tieSpacingOk = true;
-                let _badPair = null;
-                for (let _k = 0; _k < _tieIdxs.length - 1; _k++) {
-                    if (_tieIdxs[_k + 1] - _tieIdxs[_k] < 5) {
-                        _tieSpacingOk = false;
-                        _badPair = [_tieIdxs[_k] + 1, _tieIdxs[_k + 1] + 1];
-                        break;
-                    }
-                }
-                // 最後一個和局之後也需要至少 3 局空間放 B6
-                if (_tieSpacingOk && _tieIdxs.length > 0) {
-                    const _lastTieIdx = _tieIdxs[_tieIdxs.length - 1];
-                    if (_lastTieIdx + 3 >= roundsToCheck.length) {
-                        _tieSpacingOk = false;
-                        _badPair = [_lastTieIdx + 1, '末尾'];
-                    }
-                }
-                if (!_tieSpacingOk) {
-                    log(`第 ${attempt} 次生成失敗：和局間距不足（${_badPair && _badPair.join('↔')}），重新生成...`, 'warn');
-                    result = null;
-                    continue;
-                }
-            } catch (e) {
-                log(`⚠️ 和局間距檢查異常: ${e && e.message ? e.message : e}`, 'warn');
-                result = null;
-                continue;
-            }
+            // 8.5 和局間距檢查已解除：和局可自由出現，不再要求最少間距與末尾空間
 
             // 9. 連續莊/閒檢查（≥8 局違規；5-7 局最多 2 段）
             try {
@@ -4052,9 +3969,13 @@ function calculateViolationStats(rounds) {
 
     // 1. 計算訊號牌違規
     // S局應該下一局開莊，T局應該下一局開和
+    // 匯入外部 xlsx(window.__importedShoeMode=true)時跳過此檢查 — 真實牌局不必符合人造規則
     let signalViolations = 0;
 
-    for (let i = 0; i < rounds.length; i++) {
+    if (typeof window !== 'undefined' && window.__importedShoeMode === true) {
+        // 跳過訊號牌違規檢查
+    } else {
+        for (let i = 0; i < rounds.length; i++) {
         const currentRound = rounds[i];
         const nextRound = rounds[(i + 1) % rounds.length];
         if (!currentRound || !nextRound) continue;
@@ -4078,6 +3999,7 @@ function calculateViolationStats(rounds) {
         if (isViolation) {
             signalViolations++;
             signalRounds.push(i + 1);
+        }
         }
     }
 
@@ -4477,20 +4399,32 @@ async function importRoundsFromExcel(file) {
             return;
         }
 
+        // 用 header 動態對應欄位（容錯新舊版）
+        const headerMap = {};
+        ws.getRow(1).eachCell((cell, colNumber) => {
+            const name = String(cell.value || '').trim();
+            if (name) headerMap[name] = colNumber;
+        });
+        const colSegment = headerMap['段標'] || 2;
+        const colColorSeq = headerMap['色序'] || 3;
+        const colCard1 = headerMap['卡片1'] || 4;
+        const colResult = headerMap['結果'] || 10;
+        const colSignal = headerMap['訊號'] || 11;
+
         const rounds = [];
         let globalPos = 0;
 
         ws.eachRow((row, rowNumber) => {
             if (rowNumber === 1) return;
 
-            const segment = (row.getCell(2).value || '').toString();
-            const colorSeq = (row.getCell(3).value || '').toString();
-            const result = (row.getCell(10).value || '').toString();
-            const signal = (row.getCell(11).value || '').toString();
+            const segment = (row.getCell(colSegment).value || '').toString();
+            const colorSeq = (row.getCell(colColorSeq).value || '').toString();
+            const result = (row.getCell(colResult).value || '').toString();
+            const signal = (row.getCell(colSignal).value || '').toString();
 
             const cards = [];
             for (let i = 0; i < 6; i++) {
-                const cellValue = row.getCell(4 + i).value;
+                const cellValue = row.getCell(colCard1 + i).value;
                 if (!cellValue || cellValue.toString().trim() === '') continue;
                 const backColor = colorSeq[i] || '';
                 const card = parseCardLabel(cellValue.toString(), globalPos, backColor);
@@ -4525,7 +4459,10 @@ async function importRoundsFromExcel(file) {
         }
 
         currentRounds = rounds;
-        log(`✅ 匯入成功：${rounds.length} 局`, 'success');
+        // 匯入外部 xlsx 時跳過訊號牌/連續莊閒/連續4張等「人造規則」違規檢查
+        // 「生成牌靴」會自動 reset 這個 flag(見 generateShoe)
+        window.__importedShoeMode = true;
+        log(`✅ 匯入成功：${rounds.length} 局（已停用訊號牌違規檢查）`, 'success');
 
         refreshAnalysisAndRender({ mutate: false, skipVerify: true });
         setEditButtonsAvailability(true);
@@ -4533,6 +4470,16 @@ async function importRoundsFromExcel(file) {
 
         const stats = buildStatsFromRounds();
         log(`莊家局數: ${stats.bankerCount}、閒家局數: ${stats.playerCount}、和局數: ${stats.tieCount}`, 'info');
+
+        // 匯入後跑回復分析,讓「平均N局/最大消耗/4-5-6張局/對調莊6/莊6點贏」面板顯示出來
+        try {
+            if (typeof analyzeShoeRecovery === 'function' && typeof updateRecoveryDisplay === 'function') {
+                const recoveryResult = analyzeShoeRecovery(currentRounds);
+                if (recoveryResult) updateRecoveryDisplay(recoveryResult);
+            }
+        } catch (e) {
+            console.warn('匯入後回復分析失敗:', e);
+        }
 
     } catch (error) {
         console.error('匯入失敗:', error);
@@ -4639,14 +4586,9 @@ function distributeRemainingCards(rounds, remainingCards) {
                 // 和局檢查：最後一局結果不能是和局（除非上一局是三條）
                 const prevRound = idx > 0 ? rounds[idx - 1] : null;
                 const prevIsT = prevRound && (prevRound.isT || (typeof hasFullHouse === 'function' && hasFullHouse(prevRound)));
-                // 原始莊6閒≤5 必須排除
-                let candidateIsOriginalB6 = false;
+                // 仍需偵測對調後是否為 B6，用於 swapBanker6Target 上限檢查
                 let candidateIsB6 = false;
                 if (sensCandidate && Array.isArray(sensCandidate.ordered)) {
-                    const info = computeRoundHands(sensCandidate.ordered);
-                    if (info && info.bankerTotal === 6 && info.playerTotal <= 5) {
-                        candidateIsOriginalB6 = true;
-                    }
                     const tmp = sensCandidate.ordered.map(c => (c && typeof c.clone === 'function') ? c.clone() : { ...c });
                     if (tmp.length >= 2) {
                         [tmp[0], tmp[1]] = [tmp[1], tmp[0]];
@@ -4671,7 +4613,7 @@ function distributeRemainingCards(rounds, remainingCards) {
                     }
                 }
                 const b6Overflow = swapB6Target_ > 0 && currentB6Count_ >= swapB6Target_ && candidateIsB6;
-                const candidateOk = sensCandidate && !(sensCandidate.result === '和' && !prevIsT) && !candidateIsOriginalB6 && !b6Overflow;
+                const candidateOk = sensCandidate && !(sensCandidate.result === '和' && !prevIsT) && !b6Overflow;
                 if (candidateOk) {
                     copiedRound.cards = sensCandidate.ordered.map((c, pos) => {
                         if (c && typeof c.clone === 'function') return c.clone(pos);
@@ -4781,15 +4723,6 @@ function distributeRemainingCards(rounds, remainingCards) {
                         allRemainingCards.push(cardToAdd);
                         failedAttempts++;
                         log(`  ✗ ${formatCardLabel(cardToAdd)} 補入後有訊號牌但下一局(${i + 2})非莊，改試下一張`, 'warn');
-                        continue;
-                    }
-
-                    // 原始莊6閒≤5 排除
-                    const candidateHandInfo = computeRoundHands(candidate.ordered);
-                    if (candidateHandInfo && candidateHandInfo.bankerTotal === 6 && candidateHandInfo.playerTotal <= 5) {
-                        allRemainingCards.push(cardToAdd);
-                        failedAttempts++;
-                        log(`  ✗ ${formatCardLabel(cardToAdd)} 補入後變成原始莊6閒≤5，改試下一張`, 'warn');
                         continue;
                     }
 
@@ -4942,38 +4875,66 @@ function recalculateRoundsAfterDistribution(rounds) {
 const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbypt3_PnEL5TgdDPaBwg1M5bWAjQMR9dD5Jslicn3eZCtuNSTtqO35RafhQpuX-l9_m/exec';
 
 /**
+ * 產生下一個導出檔名：F01.xlsx, F02.xlsx, ...，編號存於 localStorage 自動遞增
+ */
+function getNextExportFilename() {
+    const key = 'at-export-counter';
+    const last = parseInt(localStorage.getItem(key) || '0', 10);
+    const next = (Number.isFinite(last) && last >= 0 ? last : 0) + 1;
+    localStorage.setItem(key, String(next));
+    const padded = next < 100 ? String(next).padStart(2, '0') : String(next);
+    return `F${padded}.xlsx`;
+}
+
+/**
  * 上傳檔案到 Google Drive (透過 Apps Script)
+ * 失敗會自動重試最多 3 次（針對 Drive 服務暫時性錯誤）
  */
 async function uploadToGoogleDrive(blob, filename) {
-    try {
-        log('正在上傳到 Google Drive...', 'info');
+    const MAX_ATTEMPTS = 3;
+    const base64Data = await blobToBase64(blob);
+    const uploadData = {
+        filename: filename,
+        base64Data: base64Data.split(',')[1]
+    };
 
-        const base64Data = await blobToBase64(blob);
+    let lastError = null;
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+        try {
+            log(`正在上傳到 Google Drive... (第 ${attempt} 次嘗試)`, 'info');
 
-        const uploadData = {
-            filename: filename,
-            base64Data: base64Data.split(',')[1]
-        };
+            const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify(uploadData)
+            });
 
-        const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
-            method: 'POST',
-            body: JSON.stringify(uploadData)
-        });
+            const result = await response.json();
 
-        const result = await response.json();
+            if (result.success) {
+                log(`✓ 已上傳到 Google Drive: ${result.fileName}`, 'success');
+                log(`📁 檔案連結: ${result.fileUrl}`, 'info');
+                return result;
+            }
 
-        if (result.success) {
-            log(`✓ 已上傳到 Google Drive: ${result.fileName}`, 'success');
-            log(`📁 檔案連結: ${result.fileUrl}`, 'info');
-            return result;
-        } else {
-            throw new Error(result.message || result.error || '上傳失敗');
+            // 後端回 success:false → 留下錯誤訊息進入重試
+            const errMsg = result.message || result.error || '上傳失敗';
+            lastError = new Error(errMsg);
+            log(`⚠ 第 ${attempt} 次嘗試失敗：${errMsg}`, 'warn');
+        } catch (error) {
+            lastError = error;
+            log(`⚠ 第 ${attempt} 次嘗試失敗：${error.message || error}`, 'warn');
         }
 
-    } catch (error) {
-        console.error('Google Drive 上傳錯誤:', error);
-        throw error;
+        // 還沒到最後一次 → 等待後重試（指數退避：2s、4s）
+        if (attempt < MAX_ATTEMPTS) {
+            const waitMs = 2000 * attempt;
+            log(`等待 ${waitMs / 1000} 秒後重試...`, 'info');
+            await new Promise(resolve => setTimeout(resolve, waitMs));
+        }
     }
+
+    console.error('Google Drive 上傳錯誤（重試 3 次後仍失敗）:', lastError);
+    throw lastError;
 }
 
 /**
@@ -5410,7 +5371,7 @@ async function exportRoundsAsExcelWithDrive() {
 
         // === 工作表2:原始數據 === (完全保留原始代碼)
         const ws2 = wb.addWorksheet('原始數據');
-        const headers = ['局號', '段標', '色序', '卡片1', '卡片2', '卡片3', '卡片4', '卡片5', '卡片6', '結果', '訊號'];
+        const headers = ['局號', '段標', '色序', '卡片1', '卡片2', '卡片3', '卡片4', '卡片5', '卡片6', '結果', '莊', '閒', '訊號', '對調莊', '對調閒'];
         ws2.addRow(headers);
         const headerRow = ws2.getRow(1);
         headerRow.font = { bold: true };
@@ -5434,15 +5395,47 @@ async function exportRoundsAsExcelWithDrive() {
                 row.push(cards[i] ? getCardLabel(cards[i]) : '');
             }
             row.push(round?.result || '');
+
+            // 莊家、閒家點數
+            const handInfo = (cards.length >= 4) ? computeRoundHands(cards) : null;
+            const bankerPt = handInfo && typeof handInfo.bankerTotal === 'number' ? handInfo.bankerTotal : '';
+            const playerPt = handInfo && typeof handInfo.playerTotal === 'number' ? handInfo.playerTotal : '';
+            row.push(bankerPt);
+            row.push(playerPt);
+
+            // 訊號
             let signalTag = '';
             if (sIndexes.has(idx)) signalTag = 'S';
             else if (tIndexes.has(idx)) signalTag = 'T';
             row.push(signalTag);
+
+            // 對調第一二張後的莊家、閒家點數
+            let swapBankerPt = '', swapPlayerPt = '';
+            if (cards.length >= 4) {
+                const swapped = cards.map(c => c && c.clone ? c.clone() : { ...c });
+                [swapped[0], swapped[1]] = [swapped[1], swapped[0]];
+                const swapInfo = computeRoundHands(swapped);
+                if (swapInfo) {
+                    if (typeof swapInfo.bankerTotal === 'number') swapBankerPt = swapInfo.bankerTotal;
+                    if (typeof swapInfo.playerTotal === 'number') swapPlayerPt = swapInfo.playerTotal;
+                }
+            }
+            row.push(swapBankerPt);
+            row.push(swapPlayerPt);
+
             ws2.addRow(row);
         });
 
         ws2.columns.forEach(column => {
             column.width = 12;
+        });
+
+        // 整頁字體 14，全部置中
+        ws2.eachRow((row) => {
+            row.eachCell({ includeEmpty: true }, (cell) => {
+                cell.font = Object.assign({}, cell.font || {}, { size: 14 });
+                cell.alignment = { horizontal: 'center', vertical: 'middle' };
+            });
         });
 
         // === 工作表3:直立式牌靴 === (416張牌垂直排列)
@@ -5533,8 +5526,8 @@ async function exportRoundsAsExcelWithDrive() {
         const buffer = await wb.xlsx.writeBuffer();
         const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
 
-        // 生成檔名
-        const filename = `signal-analysis-${Date.now()}.xlsx`;
+        // 生成檔名（F01.xlsx, F02.xlsx, ... 自動遞增）
+        const filename = getNextExportFilename();
 
         // === 下載到本機 ===
         const link = document.createElement('a');
