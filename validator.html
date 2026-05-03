@@ -19,7 +19,7 @@
 </head>
 <body>
   <h2>Signals 匯出 XLSX 驗算器</h2>
-  <p class="muted">完整驗證：補牌規則 + 結果計算 + 敏感局 + 用牌張數 + 莊家6點 + 三條/和局配對</p>
+  <p class="muted">完整驗證：補牌規則 + 結果計算 + 敏感局 + 用牌張數 + 莊家6點</p>
 
   <div class="row">
     <label><input type="radio" name="source" value="file" checked /> 本地檔案</label>
@@ -111,18 +111,6 @@
 
     function calcPoint(cards) {
       return cards.reduce((sum, c) => sum + c.point, 0) % 10;
-    }
-
-    // 檢查是否為三條（至少3張相同點數，且點數為1-9）
-    function hasFullHouse(cards) {
-      if (cards.length < 3) return false;
-      const pointCounts = {};
-      for (const c of cards) {
-        if (c.point >= 1 && c.point <= 9) {
-          pointCounts[c.point] = (pointCounts[c.point] || 0) + 1;
-        }
-      }
-      return Object.values(pointCounts).some(count => count >= 3);
     }
 
     function validateRound(cardLabels) {
@@ -218,9 +206,6 @@
         }
       }
 
-      // 檢查是否為三條局
-      const isFullHouse = hasFullHouse(cards);
-
       return {
         result,
         pTotal,
@@ -231,7 +216,6 @@
         usedCardCount,
         sensitive,
         swappedResult,
-        isFullHouse,
         banker6Flag
       };
     }
@@ -480,7 +464,6 @@
         let total = 0;
         let tieCount = 0;
         let sensitiveCount = 0;
-        let fullHouseCount = 0;
         let notSensitiveButSwappable = 0; // 可對調但對調後變和局（不算敏感局）
         let banker6Count = 0;
         const banker6Rounds = [];
@@ -555,12 +538,11 @@
             });
           }
           
-          // 統計敏感局、三條、和局
+          // 統計敏感局、和局
           if (!validation.error) {
             if (validation.result === '和') tieCount++;
 
             if (validation.sensitive) sensitiveCount++;
-            if (validation.isFullHouse) fullHouseCount++;
 
             if (validation.banker6Flag) {
               banker6Count++;
@@ -581,7 +563,6 @@
               roundNo,
               result: validation.result,
               sensitive: validation.sensitive,
-              isFullHouse: validation.isFullHouse,
               swappedResult: validation.swappedResult,
               cardCount: cardLabels.length
             });
@@ -608,11 +589,6 @@
               roundsForRecovery.push({ cards: parsed });
             }
           }
-        }
-
-        // 檢查三條局與和局的配對
-        if (fullHouseCount !== tieCount) {
-          warnings.push(`三條局(${fullHouseCount})與和局(${tieCount})數量不匹配`);
         }
 
         // 莊家6點只標示（不算違規）

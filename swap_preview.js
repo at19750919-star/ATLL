@@ -172,8 +172,7 @@ function rebuildRoundsFromDeck(deck) {
             swapResult: sensInfo.swapResult,
             playerTotal: roundInfo.playerTotal,
             bankerTotal: roundInfo.bankerTotal,
-            segment: 'A',  // 預覽時暫時都標 A
-            isT: false
+            segment: 'A'  // 預覽時暫時都標 A
         });
 
         pos += roundInfo.cardCount;
@@ -190,8 +189,7 @@ function rebuildRoundsFromDeck(deck) {
             swapResult: null,
             playerTotal: null,
             bankerTotal: null,
-            segment: 'C',
-            isT: false
+            segment: 'C'
         });
     }
 

@@ -85,7 +85,6 @@ function showSmartReorderDialog(roundIndex) {
                             <label>額外條件（可選）：</label>
                             <div class="checkbox-group">
                                 <label><input type="checkbox" id="requireSwap" checked> 必須可對調</label>
-                                <label><input type="checkbox" id="requireFullHouse"> 包含三條牌型</label>
                                 <label><input type="checkbox" id="preserveCardCount"> 保持原用牌數</label>
                             </div>
                         </div>
@@ -410,7 +409,6 @@ function executeSmartReorder(roundIndex) {
     const desiredResultRadio = document.querySelector('input[name="desiredResult"]:checked');
     const desiredResult = desiredResultRadio ? desiredResultRadio.value : 'any';
     const requireSwap = document.getElementById('requireSwap')?.checked ?? true;
-    const requireFullHouse = document.getElementById('requireFullHouse')?.checked ?? false;
     const preserveCardCount = document.getElementById('preserveCardCount')?.checked ?? false;
 
     // 構建選項
@@ -418,7 +416,6 @@ function executeSmartReorder(roundIndex) {
         preserveResult: desiredResult === 'any' ? null : desiredResult,
         requireSwap: requireSwap,
         requireSensitive: true, // 固定必須是敏感局
-        requireFullHouse: requireFullHouse,
         preserveCardCount: preserveCardCount
     };
 
@@ -579,14 +576,12 @@ function executeSwapSuggestion(targetIdx, fromIdx, fromCardIdx, toCardIdx) {
     const desiredResultRadio = document.querySelector('input[name="desiredResult"]:checked');
     const desiredResult = desiredResultRadio ? desiredResultRadio.value : 'any';
     const requireSwap = document.getElementById('requireSwap')?.checked ?? true;
-    const requireFullHouse = document.getElementById('requireFullHouse')?.checked ?? false;
     const preserveCardCount = document.getElementById('preserveCardCount')?.checked ?? false;
 
     const options = {
         preserveResult: desiredResult === 'any' ? null : desiredResult,
         requireSwap: requireSwap,
         requireSensitive: true,
-        requireFullHouse: requireFullHouse,
         preserveCardCount: preserveCardCount
     };
 

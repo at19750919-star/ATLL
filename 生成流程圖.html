@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>牌靴生成流程圖(可編輯)</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "Microsoft JhengHei", sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  header {
+    background: #1e293b;
+    padding: 12px 20px;
+    border-bottom: 1px solid #334155;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  header h1 {
+    margin: 0;
+    color: #38bdf8;
+    font-size: 18px;
+  }
+  header .src {
+    color: #94a3b8;
+    font-size: 12px;
+    font-family: Consolas, monospace;
+  }
+  .toolbar {
+    margin-left: auto;
+    display: flex;
+    gap: 8px;
+  }
+  button {
+    background: #334155;
+    color: #e2e8f0;
+    border: 1px solid #475569;
+    border-radius: 6px;
+    padding: 6px 14px;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  button:hover { background: #475569; }
+  button.primary { background: #0284c7; border-color: #0369a1; }
+  button.primary:hover { background: #0369a1; }
+  select {
+    background: #334155;
+    color: #e2e8f0;
+    border: 1px solid #475569;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+  main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 4px 1.5fr;
+    overflow: hidden;
+  }
+  .pane {
+    overflow: auto;
+    padding: 12px;
+  }
+  .editor-pane {
+    background: #0f172a;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .editor-pane label {
+    font-size: 12px;
+    color: #94a3b8;
+    margin-bottom: 6px;
+  }
+  textarea {
+    flex: 1;
+    width: 100%;
+    background: #020617;
+    color: #e2e8f0;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 12px;
+    font-family: "Cascadia Code", Consolas, "Microsoft JhengHei", monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    resize: none;
+    tab-size: 2;
+  }
+  .splitter {
+    background: #334155;
+    cursor: col-resize;
+  }
+  .splitter:hover { background: #38bdf8; }
+  .preview-pane {
+    background: #f8fafc;
+    color: #0f172a;
+  }
+  .preview-pane .mermaid {
+    background: #fff;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+    border: 1px solid #e2e8f0;
+  }
+  .err {
+    color: #b91c1c;
+    background: #fee2e2;
+    padding: 12px;
+    border-radius: 6px;
+    font-family: Consolas, monospace;
+    font-size: 12px;
+    white-space: pre-wrap;
+  }
+  .status {
+    color: #16a34a;
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+  footer {
+    background: #1e293b;
+    padding: 10px 20px;
+    border-top: 1px solid #334155;
+    font-size: 12px;
+    color: #94a3b8;
+  }
+  kbd {
+    background: #334155;
+    border: 1px solid #475569;
+    border-radius: 3px;
+    padding: 1px 6px;
+    font-family: Consolas, monospace;
+    color: #e2e8f0;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>牌靴生成流程圖</h1>
+  <span class="src">signals.js:3072 generateShoe()</span>
+  <div class="toolbar">
+    <select id="presetSelect">
+      <option value="main">① 主流程(重試迴圈)</option>
+      <option value="deck">② 416 張組成</option>
+      <option value="pack">③ 敏感局挑選</option>
+      <option value="post">④ 定案後處理</option>
+      <option value="all">⑤ 總覽(壓縮版)</option>
+    </select>
+    <button id="renderBtn" class="primary">重新渲染 (Ctrl+Enter)</button>
+    <button id="downloadSvgBtn">下載 SVG</button>
+    <button id="copyBtn">複製原始碼</button>
+  </div>
+</header>
+
+<main>
+  <section class="editor-pane pane">
+    <label>Mermaid 原始碼(可直接編輯)</label>
+    <textarea id="editor" spellcheck="false"></textarea>
+    <div id="status" class="status"></div>
+  </section>
+  <div class="splitter" id="splitter"></div>
+  <section class="preview-pane pane" id="preview">
+    <div class="mermaid" id="diagram"></div>
+  </section>
+</main>
+
+<footer>
+  快捷鍵:<kbd>Ctrl</kbd>+<kbd>Enter</kbd> 重新渲染 ・ 下拉選單切換流程圖 ・ 內容會自動存到 localStorage
+</footer>
+
+<script>
+const PRESETS = {
+  main: `%% 主流程:重試迴圈 (signals.js:3072 generateShoe)
+flowchart LR
+  Start([點生成]) --> Loop[/重試迴圈<br/>attempt++/]
+  Loop --> Gen
+  Gen --> Check
+  Check -- 任一不過 --> Loop
+  Check -- 全過 --> Done([finalizedRounds 確定])
+  Done --> Post[定案後處理]
+
+  subgraph Gen["生成階段"]
+    direction TB
+    S1[① 416 張洗牌<br/>build_shuffled_deck] --> S2[② 挑敏感局<br/>pack_all_sensitive_and_segment]
+    S2 --> S3[③ 殘牌分配<br/>distributeRemainingCards]
+    S3 --> S4[④ S 局訊號調整<br/>analyze_signal_cards]
+  end
+
+  subgraph Check["多重檢查(任一不過就重來)"]
+    direction TB
+    C1[⑤ 回復速度] --> C2[⑥ 莊閒差距]
+    C2 --> C3[⑦ 連續莊閒 ≥8 違規<br/>5-7 局最多 2 段]
+  end
+
+  classDef gen fill:#fde68a,stroke:#ca8a04,color:#000
+  classDef check fill:#fecaca,stroke:#dc2626,color:#000
+  classDef done fill:#86efac,stroke:#16a34a,color:#000
+  class S1,S2,S3,S4 gen
+  class C1,C2,C3 check
+  class Done,Post done`,
+
+  deck: `%% 416 張的組成 (signals.js:572 build_shuffled_deck)
+flowchart LR
+  A[4 種花色 ♠♥♦♣<br/>× 13 點數 A~K<br/>= 52 張一副] --> B[每張複製 2 份<br/>R 紅卡背 + B 藍卡背<br/>= 104 張]
+  B --> C[× 4 次循環<br/>R + B + R + B<br/>= 416 張]
+  C --> D[Fisher-Yates 洗牌]
+  D --> E[標記 pos = 0~415<br/>回傳 deck]
+
+  classDef step fill:#bae6fd,stroke:#0284c7,color:#000
+  class A,B,C,D,E step`,
+
+  pack: `%% 敏感局挑選 (signals_ui.js:940 pack_all_sensitive_and_segment)
+flowchart TD
+  P0[輸入:416 張已洗好的 deck] --> P1{穿越段啟用?}
+  P1 -- 是 --> P1a[TraverseSegment.pickTraverseSegments<br/>挑 N 段 × M 張]
+  P1 -- 否 --> P2
+  P1a --> P2[new Simulator deck]
+  P2 --> P3[scan_all_sensitive_rounds<br/>signals.js:755<br/>逐張試 simulate_round<br/>找所有 sensitive 局]
+  P3 --> P4[逐一加入 a_rounds 過濾條件:<br/>• shouldSkipSensitiveRound<br/>• 牌位已用<br/>• 4張局達上限<br/>• 七點逆轉達上限<br/>• B6 達上限]
+  P4 --> P5[harvestAdditionalSensitiveRounds<br/>多重洗牌:從剩餘牌再挑<br/>最多 200 次]
+  P5 --> P6[tail_cards = 未用到的牌<br/>= C 段殘牌]
+  P6 --> P7{穿越模式?}
+  P7 -- 是 --> P7a[a_rounds 平均切 G 段<br/>排列 A1→B1→A2→B2...<br/>每段末2局 skipColorAdjust<br/>每段末1局 isHeartMarker]
+  P7 -- 否 --> P7b[final_rounds = a_rounds + c_round]
+  P7a --> P8
+  P7b --> P8[回傳 a_rounds, c_cards,<br/>final_rounds, final_card_deck]
+
+  classDef step fill:#bae6fd,stroke:#0284c7,color:#000
+  classDef cond fill:#fde68a,stroke:#ca8a04,color:#000
+  class P0,P1a,P2,P3,P4,P5,P6,P7a,P7b,P8 step
+  class P1,P7 cond`,
+
+  post: `%% 定案後處理 (signals.js:3339~3491)
+flowchart TD
+  X0[finalizedRounds 確定] --> X1[currentRounds = finalizedRounds]
+  X1 --> X2[refreshAnalysisAndRender<br/>mutate:false, skipVerify:true]
+  X2 --> X3[setEditButtonsAvailability true<br/>resetEditState]
+  X3 --> X4[verifyShoeRules<br/>signals.js:2455<br/>規則驗證 + 自動修復]
+  X4 --> X4a{__roundsModified?}
+  X4a -- 是 --> X4b[再 refresh 一次]
+  X4a -- 否 --> X5
+  X4b --> X5[runAutoColorSwap_Signal<br/>signals.js:3685<br/>自動卡色調整]
+  X5 --> X6[applyHeartMarking<br/>signals.js:5245<br/>B 段每段末局換 4 張愛心]
+  X6 --> X7[buildStatsFromRounds<br/>輸出統計 log]
+  X7 --> X8[analyzeShoeRecovery<br/>更新回復顯示]
+  X8 --> End([完成])
+
+  classDef step fill:#86efac,stroke:#16a34a,color:#000
+  class X0,X1,X2,X3,X4,X4b,X5,X6,X7,X8,End step`,
+
+  all: `%% 總覽
+flowchart LR
+  subgraph G1["生成階段(可重試)"]
+    direction TB
+    A1[416 張<br/>洗牌] --> A2[挑敏感局<br/>A 段]
+    A2 --> A3[殘牌處理<br/>C 段]
+    A3 --> A4[S/T 訊號<br/>調整]
+    A4 --> A5[多重檢查<br/>不過就重來]
+  end
+  subgraph G2["定案後處理"]
+    direction TB
+    B1[verifyShoeRules<br/>規則驗證+修復] --> B2[卡色調整]
+    B2 --> B3[愛心標記]
+    B3 --> B4[統計+渲染]
+  end
+  G1 --> G2
+
+  classDef gen fill:#fbbf24,stroke:#f59e0b,color:#000
+  classDef post fill:#86efac,stroke:#16a34a,color:#000
+  class A1,A2,A3,A4,A5 gen
+  class B1,B2,B3,B4 post`
+};
+
+const editor = document.getElementById('editor');
+const diagram = document.getElementById('diagram');
+const status = document.getElementById('status');
+const presetSelect = document.getElementById('presetSelect');
+const renderBtn = document.getElementById('renderBtn');
+const downloadBtn = document.getElementById('downloadSvgBtn');
+const copyBtn = document.getElementById('copyBtn');
+
+mermaid.initialize({
+  startOnLoad: false,
+  theme: 'base',
+  themeVariables: {
+    primaryColor: '#dbeafe',
+    primaryTextColor: '#0f172a',
+    primaryBorderColor: '#3b82f6',
+    lineColor: '#475569',
+    fontSize: '14px'
+  },
+  flowchart: { htmlLabels: true, curve: 'basis' }
+});
+
+let renderId = 0;
+async function render() {
+  const code = editor.value.trim();
+  if (!code) {
+    diagram.innerHTML = '';
+    return;
+  }
+  const id = 'mmd-' + (++renderId);
+  try {
+    const { svg } = await mermaid.render(id, code);
+    diagram.innerHTML = svg;
+    status.textContent = '✓ 已渲染 ' + new Date().toLocaleTimeString();
+    status.style.color = '#16a34a';
+  } catch (e) {
+    diagram.innerHTML = `<div class="err">渲染錯誤:\n${e.message || e}</div>`;
+    status.textContent = '✗ 語法錯誤';
+    status.style.color = '#ef4444';
+  }
+}
+
+function loadPreset(key) {
+  editor.value = PRESETS[key];
+  localStorage.setItem('shoe-flow-mermaid', editor.value);
+  localStorage.setItem('shoe-flow-preset', key);
+  render();
+}
+
+presetSelect.addEventListener('change', e => loadPreset(e.target.value));
+renderBtn.addEventListener('click', render);
+editor.addEventListener('input', () => {
+  localStorage.setItem('shoe-flow-mermaid', editor.value);
+});
+editor.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+    e.preventDefault();
+    render();
+  }
+});
+
+downloadBtn.addEventListener('click', () => {
+  const svg = diagram.querySelector('svg');
+  if (!svg) return;
+  const blob = new Blob([svg.outerHTML], { type: 'image/svg+xml' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = '生成流程圖.svg';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+copyBtn.addEventListener('click', async () => {
+  await navigator.clipboard.writeText(editor.value);
+  status.textContent = '✓ 已複製到剪貼簿';
+  status.style.color = '#0284c7';
+});
+
+// Splitter drag
+const splitter = document.getElementById('splitter');
+let dragging = false;
+splitter.addEventListener('mousedown', () => { dragging = true; document.body.style.userSelect = 'none'; });
+window.addEventListener('mouseup', () => { dragging = false; document.body.style.userSelect = ''; });
+window.addEventListener('mousemove', e => {
+  if (!dragging) return;
+  const main = document.querySelector('main');
+  const ratio = e.clientX / main.clientWidth;
+  if (ratio > 0.15 && ratio < 0.85) {
+    main.style.gridTemplateColumns = `${ratio}fr 4px ${1 - ratio}fr`;
+  }
+});
+
+// 啟動:讀 localStorage 或載預設
+const savedKey = localStorage.getItem('shoe-flow-preset') || 'main';
+const savedCode = localStorage.getItem('shoe-flow-mermaid');
+if (savedCode && PRESETS[savedKey] !== savedCode) {
+  // 使用者改過,沿用編輯內容
+  presetSelect.value = savedKey;
+  editor.value = savedCode;
+  render();
+} else {
+  presetSelect.value = savedKey;
+  loadPreset(savedKey);
+}
+</script>
+
+</body>
+</html>

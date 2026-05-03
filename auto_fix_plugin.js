@@ -136,13 +136,10 @@
                     if (!nextRound || !currentRound) continue;
 
                     // 判斷期望結果
-                    const isT = currentRound.isT || hasFullHouse(currentRound);
                     const hasSignal = currentRound.cards && currentRound.cards.some(c => c && isSignalCardByConfig(c));
-                    
+
                     let expectedResult;
-                    if (isT) {
-                        expectedResult = '和';
-                    } else if (hasSignal) {
+                    if (hasSignal) {
                         expectedResult = '莊';
                     } else {
                         expectedResult = null; // 不應該是莊

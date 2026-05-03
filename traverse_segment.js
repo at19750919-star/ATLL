@@ -499,7 +499,6 @@
             const round = ctx.makeRoundInfo(startPos, cards, result, false);
             round.segment = 'A';        // UI 標籤：A 段（穿越段）
             round.isTraverse = true;    // 內部旗標：屬於穿越段
-            round.skipTLogic = true;    // 不被 T 局處理動到
             rounds.push(round);
             cur += size;
         }

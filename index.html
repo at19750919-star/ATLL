@@ -2208,6 +2208,9 @@ tr.highlighted-row { background: rgba(255,170,0,0.05) !important; }
                 <input type="file" id="importFileInput" accept=".xlsx" style="display:none">
                 <button class="tool-btn" id="btnValidate">驗證</button>
                 <button class="tool-btn" id="btnSpeech">語音</button>
+                <button class="tool-btn" id="btnSequence">依序列生成</button>
+                <button class="tool-btn" id="btnRoadMap">路單</button>
+                <button class="tool-btn" id="btnRoadInput">路單編輯</button>
                 <button class="tool-btn" id="btnPointStats" onclick="window.open('point_stats.html','_blank')">點數統計</button>
                 <button class="tool-btn" id="btnManualInput" onclick="window.open('manual_input.html','_blank')">手動輸入</button>
                 <button class="tool-btn" id="btnDealer">發牌</button>
@@ -2382,6 +2385,9 @@ tr.highlighted-row { background: rgba(255,170,0,0.05) !important; }
     <script src="traverse.js"></script>
     <script src="traverse_segment.js?v=2"></script>
     <script src="auto_fix_plugin.js?v=2"></script>
+    <script src="sequence_input_dialog.js"></script>
+    <script src="roadmap_dialog.js"></script>
+    <script src="road_input_dialog.js"></script>
 
     <!-- 主題切換邏輯 -->
     <script>
