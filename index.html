@@ -523,6 +523,12 @@ body::after {
 .rounds-table tr.selected-second td { background: rgba(0,212,255,0.08); box-shadow: inset 0 0 0 1px rgba(0,212,255,0.3); }
 .rounds-table tr.s-signal-round td.result-cell { border-bottom: 2px solid var(--red-alert); }
 .rounds-table tr.full-house-round td.result-cell { border-bottom: 2px solid var(--phosphor); }
+.rounds-table tr.traverse-round td { border-top: 2px solid #9b59ff; border-bottom: 2px solid #9b59ff; background: rgba(155,89,255,0.06); }
+.rounds-table tr.traverse-round td:first-child { border-left: 3px solid #9b59ff; }
+.rounds-table tr.traverse-round td:last-child { border-right: 3px solid #9b59ff; }
+.rounds-table tr.traverse-round:hover td { background: rgba(155,89,255,0.12); }
+/* A 段卡片：跟著卡片走，切牌後也會顯示 */
+.card-label.traverse-card { box-shadow: 0 0 0 2px #9b59ff; position: relative; z-index: 1; }
 .rounds-table td.banker-six-point { color: var(--red-alert); font-weight: 700; position: relative; }
 .rounds-table td.banker-six-point::after { content: '六'; position: absolute; top: 2px; right: 2px; font-size: 10px; color: var(--red-alert); opacity: .6; }
 
@@ -712,7 +718,12 @@ tr.highlighted-row { background: rgba(255,170,0,0.05) !important; }
 .widget-content .card-input { width: 44px; height: 32px; text-align: center; font-size: 18px; font-weight: 400; padding: 0; box-sizing: border-box; background: var(--bg-inset); border: var(--border-dim); color: var(--phosphor); border-radius: 2px; transition: .2s; font-family: var(--font-display); letter-spacing: 1px; }
 .widget-content .card-input:focus { outline: none; border-color: var(--phosphor); box-shadow: var(--phosphor-soft); }
 .widget-content .card-input.disabled { background: rgba(0,0,0,0.4); border-color: var(--text-off); color: var(--text-off); pointer-events: none; }
-.widget-content .card-input.highlight { border-color: var(--phosphor); background: rgba(0,255,136,0.08); }
+.widget-content .card-input.hidden { visibility: hidden; }
+.widget-content .card-input.highlight { border-color: #ff7e2e; background: rgba(255,126,46,0.18); box-shadow: 0 0 0 2px rgba(255,126,46,0.35); animation: cardInputPulse 1.2s ease-in-out infinite; }
+@keyframes cardInputPulse {
+    0%, 100% { box-shadow: 0 0 0 2px rgba(255,126,46,0.35); }
+    50% { box-shadow: 0 0 0 3px rgba(255,126,46,0.6); }
+}
 .widget-content .results { display: grid; gap: 6px; }
 .widget-content .result-strip { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 6px; padding: 6px; background: rgba(0,0,0,0.4); border-radius: 3px; border: var(--border-dim); }
 .widget-content .result-value { font-size: 22px; font-weight: 400; text-align: center; padding: 6px 0; border-radius: 2px; background: rgba(0,0,0,0.3); color: var(--text-mid); font-family: var(--font-display); letter-spacing: 2px; }
@@ -1992,13 +2003,37 @@ tr.highlighted-row { background: rgba(255,170,0,0.05) !important; }
                         placeholder="空白=不檢查">
                 </div>
                 <div class="recovery-input-item">
-                    <label class="recovery-input-label">對調莊6局數</label>
+                    <label class="recovery-input-label">莊6局數</label>
                     <input type="number" id="swapBanker6Target" class="recovery-input" min="0" value="9"
-                        placeholder="0=不出現">
+                        placeholder="空白=不檢查 0=不出">
                 </div>
                 <div class="recovery-input-item" style="display:flex;align-items:center;gap:4px;">
                     <input type="checkbox" id="skipBanker6">
                     <label for="skipBanker6" class="recovery-input-label" style="white-space:nowrap;">避開莊6點贏</label>
+                </div>
+            </div>
+
+            <!-- 卡片3.5：穿越段設定 -->
+            <div class="panel recovery-check-inputs" style="border-top:2px solid #b94047;">
+                <div class="recovery-input-item" style="display:flex;align-items:center;gap:4px;">
+                    <input type="checkbox" id="enableTraverseSegment">
+                    <label for="enableTraverseSegment" class="recovery-input-label" style="white-space:nowrap;font-weight:bold;color:#b94047;">啟用穿越段</label>
+                </div>
+                <div class="recovery-input-item">
+                    <label class="recovery-input-label">穿越段數</label>
+                    <input type="number" id="traverseSegCount" class="recovery-input" min="1" max="10" value="3">
+                </div>
+                <div class="recovery-input-item">
+                    <label class="recovery-input-label">每段張數</label>
+                    <input type="number" id="traverseSegLengthMain" class="recovery-input" min="11" max="14" value="14">
+                </div>
+                <div class="recovery-input-item" style="display:flex;align-items:center;gap:4px;">
+                    <input type="checkbox" id="traverseTieLast" checked>
+                    <label for="traverseTieLast" class="recovery-input-label" style="white-space:nowrap;">最後一局和局</label>
+                </div>
+                <div class="recovery-input-item" style="display:flex;align-items:center;gap:4px;">
+                    <input type="checkbox" id="traverseNoA2">
+                    <label for="traverseNoA2" class="recovery-input-label" style="white-space:nowrap;">排除A、2</label>
                 </div>
             </div>
 
@@ -2340,11 +2375,12 @@ tr.highlighted-row { background: rgba(255,170,0,0.05) !important; }
     </script>
 
     <!-- 載入核心邏輯（這些檔案需要你自己提供） -->
-    <script src="signals.js?v=12"></script>
-    <script src="signals_ui.js?v=13"></script>
+    <script src="signals.js?v=20260315a"></script>
+    <script src="signals_ui.js?v=20260315a"></script>
     <script src="smart_reorder_dialog.js"></script>
     <script src="swap_preview.js"></script>
     <script src="traverse.js"></script>
+    <script src="traverse_segment.js?v=2"></script>
     <script src="auto_fix_plugin.js?v=2"></script>
 
     <!-- 主題切換邏輯 -->
@@ -2387,8 +2423,8 @@ tr.highlighted-row { background: rgba(255,170,0,0.05) !important; }
     <script>
         (function(){
             var STORAGE_KEY = 'at-settings';
-            var INPUT_IDS = ['avgRecoveryLimit','maxSideLimit','maxTieLimit','maxFourCardRate','max7PtReversal','swapBanker6Target'];
-            var CHECK_IDS = ['skipBanker6'];
+            var INPUT_IDS = ['avgRecoveryLimit','maxSideLimit','maxTieLimit','maxFourCardRate','max7PtReversal','swapBanker6Target','traverseSegCount','traverseSegLengthMain'];
+            var CHECK_IDS = ['skipBanker6','enableTraverseSegment','traverseTieLast','traverseNoA2'];
 
             // 讀取上次設定
             try {

@@ -492,6 +492,17 @@
         color: #ff0000 !important;
         font-weight: 700;
       }
+      .grid-cell.heart-marker-cell {
+        border-color: #ff1493 !important;
+        box-shadow: 0 0 14px 4px #ff1493 !important;
+        z-index: 10;
+        font-weight: 900 !important;
+        animation: heartMarkerPulse 1.2s ease-in-out infinite;
+      }
+      @keyframes heartMarkerPulse {
+        0%, 100% { box-shadow: 0 0 14px 4px #ff1493 !important; }
+        50% { box-shadow: 0 0 22px 7px #ff69b4 !important; }
+      }
       .grid-cell.grid-cell-active {
         background-color: #7dd3fc !important;
         color: #000 !important;
@@ -2127,8 +2138,16 @@
                 let backColor = null;
                 if (fill && fill.fgColor && fill.fgColor.argb) {
                   const fillColor = fill.fgColor.argb.toUpperCase();
-                  if (fillColor === "FFFFFF00") backColor = "R";
-                  else if (fillColor === "FF00FFFF") backColor = "B";
+                  if (fillColor === "FFFFFF00" || fillColor === "FFFFE699") backColor = "R";
+                  else if (fillColor === "FF00FFFF" || fillColor === "FF00CFCF") backColor = "B";
+                }
+
+                // 愛心標記偵測：粉紅粗框
+                let isHeartMarker = false;
+                const border = cell.border;
+                if (border && border.top && border.top.color && border.top.color.argb) {
+                  const borderColor = border.top.color.argb.toUpperCase();
+                  if (borderColor === "FFFF1493") isHeartMarker = true;
                 }
 
                 if (!value && !backColor) continue;
@@ -2152,7 +2171,7 @@
                 if (value === "0") rank = "K";
                 if (value === "1") rank = "A";
 
-                deck.push({ rank, suit, back: backColor, isSignal });
+                deck.push({ rank, suit, back: backColor, isSignal, isHeartMarker });
               }
             }
 
@@ -3208,6 +3227,7 @@
                 if (card.isSignal) cell.classList.add("signal-card");
                 const rankUpper = String(card.rank).toUpperCase();
                 if (rankUpper === 'A' || rankUpper === '2') cell.classList.add("rank-a2");
+                if (card.isHeartMarker) cell.classList.add("heart-marker-cell");
                 gridContainer.appendChild(cell);
                 gridCells[cardIndex] = cell;
                 cardIndex += 1;

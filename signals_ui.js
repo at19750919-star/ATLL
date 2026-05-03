@@ -939,6 +939,52 @@ function multi_pass_candidates_from_cards_simple(card_pool) {
 function pack_all_sensitive_and_segment(deck) {
     log(`🔍 開始處理：總共 ${deck.length} 張牌`, 'info');
 
+    // ===== 穿越段挑選（在敏感局掃描之前）=====
+    const traverseEnabled = (() => {
+        const el = document.getElementById('enableTraverseSegment');
+        return el && el.checked;
+    })();
+    const traverseGroups = []; // [[round, round, ...], ...]
+    const traverseUsedPos = new Set();
+
+    if (traverseEnabled && typeof TraverseSegment !== 'undefined') {
+        const segCount = parseInt(document.getElementById('traverseSegCount')?.value) || 3;
+        const segLenMain = parseInt(document.getElementById('traverseSegLengthMain')?.value) || 14;
+        const tieLast = document.getElementById('traverseTieLast')?.checked !== false;
+        const noA2 = document.getElementById('traverseNoA2')?.checked !== false;
+
+        // 從主長度往下嘗試（找不到自動降）
+        const lengths = [];
+        for (let L = segLenMain; L >= 11; L--) lengths.push(L);
+
+        log(`🟣 穿越段挑選：${segCount} 段 × ${segLenMain} 張（找不到自動降到 11）, 和局=${tieLast}, 排除A2=${noA2}`, 'info');
+
+        const segments = TraverseSegment.pickTraverseSegments(deck, {
+            count: segCount,
+            lengths,
+            tieLast,
+            noA2,
+            buildMode: 'auto',  // 先試 inline，找不到改建構
+            log,
+        });
+
+        if (!segments) {
+            throw new Error(`穿越段挑選失敗：找不到 ${segCount} 段（11-${segLenMain} 張）`);
+        }
+
+        // 把每段拆成 round 物件
+        for (const seg of segments) {
+            const rounds = TraverseSegment.buildTraverseRounds(seg.cards, {
+                Simulator,
+                makeRoundInfo,
+            });
+            traverseGroups.push(rounds);
+            // 標記這段牌位已用（用 card.pos）
+            for (const c of seg.cards) traverseUsedPos.add(c.pos);
+            log(`🟣 穿越段 (${seg.length} 張, ${rounds.length} 局)`, 'info');
+        }
+    }
+
     const sim = new Simulator(deck);
     // 掃描所有敏感局
     const scanSensitive = (typeof scan_all_sensitive_rounds === 'function')
@@ -949,9 +995,9 @@ function pack_all_sensitive_and_segment(deck) {
     }
     const all_sensitive = scanSensitive(sim);
     log(`🔍 自然掃描敏感局：找到 ${all_sensitive.length} 局`, 'info');
-    // 記錄已用過的牌位置
-    const used_pos = new Set();
-    // 儲存 A 段敏感局
+    // 記錄已用過的牌位置（先把穿越段的位置塞進去，後續敏感局挑選會自動避開）
+    const used_pos = new Set(traverseUsedPos);
+    // 儲存 A 段敏感局（注意：這裡的 a_rounds 是 AT666 既有的「敏感局集合」，UI 上稱為「B 段」）
     const a_rounds = [];
 
     // 4張局比例控制：讀取 UI 上限設定，預估總局數約 88 局
@@ -985,9 +1031,10 @@ function pack_all_sensitive_and_segment(deck) {
         return (who7 === '閒' && round.result === '莊') || (who7 === '莊' && round.result === '閒');
     };
 
-    // 對調莊6局數目標：優先挑選對調後莊家6點贏的敏感局
+    // 莊6局數上限：空白=不檢查、有值=上限
     const swapB6Input = document.getElementById('swapBanker6Target');
-    const swapB6Target = swapB6Input && swapB6Input.value !== '' ? parseInt(swapB6Input.value) : 0;
+    const swapB6LimitRaw = swapB6Input ? swapB6Input.value.trim() : '';
+    const swapB6Limit = swapB6LimitRaw !== '' ? parseInt(swapB6LimitRaw) : null;
     let swapB6Count = 0;
 
     const isSwapBankerSix = (round) => {
@@ -1006,26 +1053,7 @@ function pack_all_sensitive_and_segment(deck) {
         return !round.cards.some(c => c && isSignalCardByConfig(c));
     };
 
-    // 第一輪：優先挑選對調後莊家6點贏的敏感局（必須不含訊號牌）
-    if (swapB6Target > 0) {
-        for (const r of all_sensitive) {
-            if (swapB6Count >= swapB6Target) break;
-            if (typeof shouldSkipSensitiveRound === 'function' && shouldSkipSensitiveRound(r)) continue;
-            if (r.cards.some(c => used_pos.has(c.pos))) continue;
-            if (r.cards.length === 4) continue; // 對調莊6不挑4張局
-            if (max7PtLimit !== null && is7PtReversal(r) && sevenPtReversalCount >= max7PtLimit) continue;
-            if (!isSwapBankerSix(r)) continue;
-            if (!hasNoSignalCard(r)) continue; // B6 必須不含訊號牌
-            if (typeof hasFullHouse === 'function' && hasFullHouse(r)) continue; // B6 不能同時是三條/T 局
-            r.segment = 'A';
-            a_rounds.push(r);
-            r.cards.forEach(c => used_pos.add(c.pos));
-            if (r.cards.length === 4) fourCardCount++;
-            if (is7PtReversal(r)) sevenPtReversalCount++;
-            swapB6Count++;
-        }
-        log(`🔍 優先挑選對調莊6局：找到 ${swapB6Count}/${swapB6Target} 局`, swapB6Count >= swapB6Target ? 'success' : 'warn');
-    }
+    // 上限模式：不再優先挑 B6，自然挑選時遇到就跳過超出上限的
 
     // 先把所有敏感局加入 A 段（按原始順序，但 4 張局達上限就跳過）
     for (const r of all_sensitive) {
@@ -1038,8 +1066,8 @@ function pack_all_sensitive_and_segment(deck) {
         if (max7PtLimit !== null && is7PtReversal(r) && sevenPtReversalCount >= max7PtLimit) continue;
         // 和局必須不含訊號牌（避免後續對調把 B6 破壞）
         if (r.result === '和' && !hasNoSignalCard(r)) continue;
-        // B6 達目標就不再加入新的 B6 局
-        if (swapB6Target > 0 && swapB6Count >= swapB6Target && isSwapBankerSix(r)) continue;
+        // B6 達上限就不再加入新的 B6 局
+        if (swapB6Limit !== null && swapB6Count >= swapB6Limit && isSwapBankerSix(r)) continue;
         // 三條+B6 重疊排除
         if (typeof hasFullHouse === 'function' && hasFullHouse(r) && isSwapBankerSix(r)) continue;
         r.segment = 'A';
@@ -1085,8 +1113,8 @@ function pack_all_sensitive_and_segment(deck) {
                     if (finalRound.result === '和' && !hasNoSignalCard(finalRound)) {
                         return null;
                     }
-                    // B6 達目標就不再加入新的 B6 局
-                    if (swapB6Target > 0 && swapB6Count >= swapB6Target && isSwapBankerSix(finalRound)) {
+                    // B6 達上限就不再加入新的 B6 局
+                    if (swapB6Limit !== null && swapB6Count >= swapB6Limit && isSwapBankerSix(finalRound)) {
                         return null;
                     }
                     finalRound.segment = 'A';
@@ -1102,26 +1130,16 @@ function pack_all_sensitive_and_segment(deck) {
         }
         
         const cands = multi_pass_candidates_from_cards_simple(remaining);
-        // 4 張局已達上限就跳過，七點逆轉已達上限也跳過，B6 達標不再挑 B6，三條+B6 重疊排除，和局必須無訊號牌
+        // 4 張局已達上限就跳過，七點逆轉已達上限也跳過，B6 達上限不再挑 B6，三條+B6 重疊排除，和局必須無訊號牌
         const isValidCandidate = (r) => Array.isArray(r.cards) && r.cards.length > 0
                 && !r.cards.some(c => used_pos.has(c.pos))
                 && !(r.cards.length === 4 && fourCardCount >= maxFourCardRounds)
                 && !(max7PtLimit !== null && is7PtReversal(r) && sevenPtReversalCount >= max7PtLimit)
-                && !(swapB6Target > 0 && swapB6Count >= swapB6Target && isSwapBankerSix(r))
+                && !(swapB6Limit !== null && swapB6Count >= swapB6Limit && isSwapBankerSix(r))
                 && !(typeof hasFullHouse === 'function' && hasFullHouse(r) && isSwapBankerSix(r))
                 && !(r.result === '和' && !hasNoSignalCard(r));
-        // 優先挑選對調莊6的候選（如果目標未達成，且必須不含訊號牌、不能同時是三條）
-        let picked = null;
-        if (Array.isArray(cands)) {
-            if (swapB6Target > 0 && swapB6Count < swapB6Target) {
-                picked = cands.find(r => isValidCandidate(r) && isSwapBankerSix(r) && r.cards.length > 4 && hasNoSignalCard(r) && !(typeof hasFullHouse === 'function' && hasFullHouse(r)));
-            }
-            if (!picked) {
-                picked = cands.find(r => isValidCandidate(r));
-            }
-        } else {
-            picked = cands;
-        }
+        // 上限模式：不再優先挑 B6，按候選順序就好
+        let picked = Array.isArray(cands) ? cands.find(r => isValidCandidate(r)) : cands;
             
         // 檢查挑出來的敏感局是否合法
         if (!picked || !Array.isArray(picked.cards) || picked.cards.length === 0) {
@@ -1155,8 +1173,8 @@ function pack_all_sensitive_and_segment(deck) {
     if (max7PtLimit !== null) {
         log(`🔍 七點逆轉：${sevenPtReversalCount} 局（上限=${max7PtLimit}）`, 'info');
     }
-    if (swapB6Target > 0) {
-        log(`🔍 對調莊6：${swapB6Count}/${swapB6Target} 局`, swapB6Count >= swapB6Target ? 'success' : 'warn');
+    if (swapB6Limit !== null) {
+        log(`🔍 莊6：${swapB6Count}/${swapB6Limit} 局（上限）`, swapB6Count <= swapB6Limit ? 'success' : 'warn');
     }
       
     a_rounds.sort((a, b) => a.start_index - b.start_index);
@@ -1183,27 +1201,75 @@ function pack_all_sensitive_and_segment(deck) {
         c_round = makeRoundInfo(c_start, c_cards, '殘牌', false);
         c_round.segment = 'C';
     }
-    
-    let final_rounds = [...a_rounds, ...(c_round ? [c_round] : [])];
 
-    // 於生成流程內就完成 T 局訊號處理，避免後續再跑一次
-    if (typeof applyTSignalLogic === 'function') {
-        try {
-            const processed = applyTSignalLogic(final_rounds.slice(), a_rounds, used_pos, c_cards);
-            if (Array.isArray(processed) && processed.length > 0) {
-                final_rounds = processed;
-                const tailRound = [...final_rounds].reverse().find(r => r && r.segment === 'C');
-                c_cards = tailRound && Array.isArray(tailRound.cards) ? tailRound.cards : [];
-                log('🔍 生成流程內已完成 T 局訊號處理。', 'info');
-            } else {
-                log('⚠️ 生成流程內的 T 局處理未回傳有效結果，沿用原順序。', 'warn');
-            }
-        } catch (error) {
-            log(`⚠️ 生成流程內處理 T 局失敗: ${error && error.message ? error.message : error}`, 'error');
-            throw error;
+    let final_rounds;
+
+    if (traverseEnabled && traverseGroups.length > 0) {
+        // ===== 穿越模式：A1→B1→A2→B2→A3→B3 重排 =====
+        // 把敏感局（a_rounds）依數量平均分成 traverseGroups.length 段
+        const N = a_rounds.length;
+        const G = traverseGroups.length;
+        const sensitiveChunks = [];
+        // 讓每塊大小盡量平均：前 (N % G) 塊多一個
+        const baseSize = Math.floor(N / G);
+        const extras = N % G;
+        let cursor = 0;
+        for (let i = 0; i < G; i++) {
+            const size = baseSize + (i < extras ? 1 : 0);
+            sensitiveChunks.push(a_rounds.slice(cursor, cursor + size));
+            cursor += size;
         }
+
+        // 標記每個 B 段的最後 2 局：跳過卡色調整與檢查
+        // 每段的最後 1 局：愛心標記局（會被花色交換成 4 張愛心）
+        for (const chunk of sensitiveChunks) {
+            const len = chunk.length;
+            for (let k = Math.max(0, len - 2); k < len; k++) {
+                if (chunk[k]) chunk[k].skipColorAdjust = true;
+            }
+            if (len > 0 && chunk[len - 1]) {
+                chunk[len - 1].isHeartMarker = true;
+            }
+        }
+
+        final_rounds = [];
+        for (let i = 0; i < G; i++) {
+            // A 段（穿越）→ B 段（敏感）
+            for (const r of traverseGroups[i]) final_rounds.push(r);
+            for (const r of sensitiveChunks[i]) final_rounds.push(r);
+        }
+        if (c_round) final_rounds.push(c_round);
+
+        log(`🟣 穿越重排：${G} 個 A 段（${traverseGroups.map(g => g.length).join('+')} 局）` +
+            `+ ${G} 個 B 段（${sensitiveChunks.map(c => c.length).join('+')} 局，每段末2局免卡色檢查）` +
+            `+ ${c_round ? '殘牌' : '無殘牌'}` +
+            `，共 ${final_rounds.length} 局`, 'success');
+
+        // 穿越模式：完全跳過 T 局處理
+        log('🟣 穿越模式啟用：T 局處理已停用', 'info');
     } else {
-        log('⚠️ 找不到 applyTSignalLogic，無法在生成階段處理 T 局。', 'warn');
+        // ===== 原本流程（無穿越段）=====
+        final_rounds = [...a_rounds, ...(c_round ? [c_round] : [])];
+
+        // 於生成流程內就完成 T 局訊號處理，避免後續再跑一次
+        if (typeof applyTSignalLogic === 'function') {
+            try {
+                const processed = applyTSignalLogic(final_rounds.slice(), a_rounds, used_pos, c_cards);
+                if (Array.isArray(processed) && processed.length > 0) {
+                    final_rounds = processed;
+                    const tailRound = [...final_rounds].reverse().find(r => r && r.segment === 'C');
+                    c_cards = tailRound && Array.isArray(tailRound.cards) ? tailRound.cards : [];
+                    log('🔍 生成流程內已完成 T 局訊號處理。', 'info');
+                } else {
+                    log('⚠️ 生成流程內的 T 局處理未回傳有效結果，沿用原順序。', 'warn');
+                }
+            } catch (error) {
+                log(`⚠️ 生成流程內處理 T 局失敗: ${error && error.message ? error.message : error}`, 'error');
+                throw error;
+            }
+        } else {
+            log('⚠️ 找不到 applyTSignalLogic，無法在生成階段處理 T 局。', 'warn');
+        }
     }
 
     // 莊6閒≤5 不再於生成階段強制重來，改由最終驗證提示
@@ -2778,10 +2844,10 @@ function renderRoundsTable(rounds, analysis) {
 
     rounds.forEach((round, index) => {
         const row = document.createElement('tr');
-        
-        const isFullHouseRound = hasFullHouse(round);
-        if (isFullHouseRound) {
-            row.classList.add('full-house-round');
+
+        // 三條不再亮高
+        if (round.isTraverse) {
+            row.classList.add('traverse-round');
         }
         
         const segmentLabel = (round.segment === 'A' || round.segment === 'C') ? round.segment : '';
@@ -2813,6 +2879,9 @@ function renderRoundsTable(rounds, analysis) {
                 classes.push('s-signal-card');
             } else {
                 classes.push('non-s-signal-card');
+            }
+            if (card.isTraverseCard) {
+                classes.push('traverse-card');
             }
 
             return `<span class="${classes.join(' ')}" data-action="card" data-r="${index}" data-c="${cardIdx}">${card.short()}</span>`;
@@ -2855,9 +2924,7 @@ function renderRoundsTable(rounds, analysis) {
         if (hasSignalCard) {
             row.classList.add('s-signal-round');
         }
-        if (round.isT) {
-            row.classList.add('full-house-round');
-        }
+        // 三條不再亮高（綠色底線移除）
         if (usedCardCount !== totalCardCount) {
             row.classList.add('card-count-mismatch');
         }
@@ -3751,9 +3818,10 @@ function bindSimulatorLogic() {
             }
         });
 
-        inputs.p3.classList.add('disabled');
+        // 預設：第5、6張都隱藏 + 取消高亮
+        inputs.p3.classList.add('hidden');
         inputs.p3.classList.remove('highlight');
-        inputs.b3.classList.add('disabled');
+        inputs.b3.classList.add('hidden');
         inputs.b3.classList.remove('highlight');
 
         const resetOutput = (el, extraClass) => {
@@ -3762,6 +3830,9 @@ function bindSimulatorLogic() {
         };
 
         if (!allFourFilled) {
+            // 還沒填滿前 4 張：清空第5、6張的值
+            inputs.p3.value = '';
+            inputs.b3.value = '';
             resetOutput(normalPPointsEl, 'result-player');
             resetOutput(normalBPointsEl, 'result-banker');
             resetOutput(normalTieResultEl, 'result-outcome');
@@ -3777,13 +3848,19 @@ function bindSimulatorLogic() {
         normalTieResultEl.textContent = normalResult.result;
         normalTieResultEl.className = `result-value metric-value result-outcome outcome-${normalResult.result === '莊' ? 'banker' : normalResult.result === '閒' ? 'player' : 'tie'}`;
 
+        // 第5張（閒第三張）：需要時才顯示並高亮
         if (normalResult.needs_p3) {
-            inputs.p3.classList.remove('disabled');
+            inputs.p3.classList.remove('hidden');
             inputs.p3.classList.add('highlight');
+        } else {
+            inputs.p3.value = '';
         }
+        // 第6張（莊第三張）：需要時才顯示並高亮
         if (normalResult.needs_b3) {
-            inputs.b3.classList.remove('disabled');
+            inputs.b3.classList.remove('hidden');
             inputs.b3.classList.add('highlight');
+        } else {
+            inputs.b3.value = '';
         }
 
         const swappedResult = simulate(values.b1, values.p1, values.b2, values.p2, values.p3, values.b3);

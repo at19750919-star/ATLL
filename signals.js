@@ -433,6 +433,7 @@ class Card {
         const copy = new Card(this.rank, this.suit, newPos);
         if (this.back_color) copy.back_color = this.back_color;
         if (this.color) copy.color = this.color;
+        if (this.isTraverseCard) copy.isTraverseCard = true;
         return copy;
     }
 }
@@ -1422,6 +1423,7 @@ function findNonSignalCardCandidate(rounds, excludeRoundIdx, pointValue, usedTar
         if (r === excludeRoundIdx) continue;
         const candidateRound = rounds[r];
         if (!candidateRound || !Array.isArray(candidateRound.cards) || candidateRound.isT) continue;
+        if (candidateRound.isTraverse) continue; // 穿越段（A 段）不被當作換牌來源
         if (sSet.size && !sSet.has(r)) continue;
         for (let c = 0; c < candidateRound.cards.length; c++) {
             const key = `${r}:${c}`;
@@ -1621,11 +1623,12 @@ function analyze_signal_cards(rounds, options = {}) {
         const current_round = rounds[i];
         const next_round = rounds[i + 1];
         if (!current_round.cards) continue;
-        if (current_round && (current_round.isT || hasFullHouse(current_round))) {
-            ensureTRoundHasNoSignal(rounds, i, signalRoundSet);
-            sLog(`第${i + 1}局是T局,跳過S局訊號處理`);
+        // 穿越段保護：當前或下一局屬於穿越段就不動，避免破壞穿越條件
+        if ((current_round && current_round.isTraverse) || (next_round && next_round.isTraverse)) {
+            sLog(`第${i + 1}/${i + 2}局含穿越段，跳過S局訊號處理`);
             continue;
         }
+        // T 局邏輯已停用：三條局不再做訊號牌交換
         const has_signal = current_round.cards.some(card => isSignalCardByConfig(card));
         if (has_signal) {
             signal_rounds++;
@@ -1663,7 +1666,10 @@ function analyze_signal_cards(rounds, options = {}) {
     if (rounds.length > 1) {
         const last_round = rounds[rounds.length - 1];
         const first_round = rounds[0];
-        if (!last_round.isT && last_round.cards) {
+        // 穿越段保護：尾首相連時若任一是穿越段就跳過
+        if ((last_round && last_round.isTraverse) || (first_round && first_round.isTraverse)) {
+            sLog(`尾首相連含穿越段，跳過S局訊號處理`);
+        } else if (last_round.cards) {
             const has_signal_in_last = last_round.cards.some(card => isSignalCardByConfig(card));
             if (has_signal_in_last) {
                 signal_rounds++;
@@ -1803,10 +1809,10 @@ function getMaxTieLimitSetting() {
     const el = document.getElementById('maxTieLimit');
     if (!el) return null;
     const raw = String(el.value ?? '').trim();
-    if (raw === '') return null;
+    if (raw === '') return null; // 空白 = 不檢查
     const n = parseInt(raw, 10);
-    if (!Number.isFinite(n) || n <= 0) return null;
-    return n;
+    if (!Number.isFinite(n) || n < 0) return null;
+    return n; // 0 = 必須為 0；正數 = 必須等於該值
 }
 
 // 讀取 UI 的4張局比例上限（百分比，空白或<=0 代表不檢查）
@@ -1858,6 +1864,8 @@ function countBankerPlayerTie(rounds) {
     const out = { banker: 0, player: 0, tie: 0, total: 0 };
     if (!Array.isArray(rounds)) return out;
     for (const r of rounds) {
+        // 穿越段不計入莊閒和統計（不受上限管制）
+        if (r && r.isTraverse) continue;
         const res = getTrueRoundResultSafe(r);
         if (res === '莊') out.banker++;
         else if (res === '閒') out.player++;
@@ -1890,7 +1898,7 @@ function preflightCheckMaxSideLimit(rounds, options = {}) {
     const sideLimit = getMaxSideLimitSetting();
     const tieLimit = getMaxTieLimitSetting();
     const fourCardRateLimit = getMaxFourCardRateSetting();
-    if (!sideLimit && !tieLimit && !fourCardRateLimit) {
+    if (!sideLimit && tieLimit == null && !fourCardRateLimit) {
         const fourCardStats = countFourCardRate(rounds);
         return {
             enabled: false,
@@ -1936,7 +1944,7 @@ function preflightCheckMaxSideLimit(rounds, options = {}) {
     const fourCardStats = countFourCardRate(sourceRounds);
     const sideDiff = Math.abs(counts.banker - (counts.player + counts.tie));
     const okSide = (!sideLimit) || (sideDiff <= sideLimit);
-    const okTie = (!tieLimit) || (counts.tie === tieLimit);
+    const okTie = (tieLimit == null) || (counts.tie === tieLimit);
     const okFourCard = (!fourCardRateLimit) || (fourCardStats.rate <= fourCardRateLimit);
     const ok = okSide && okTie && okFourCard;
 
@@ -2035,6 +2043,23 @@ function findConsecutiveBankerPlayerBlocks(rounds) {
         const round = rounds[i];
         if (!round) continue;
 
+        // 穿越段視為打斷連續計數
+        if (round.isTraverse) {
+            if (consecutiveCount >= 5) {
+                blocks.push({
+                    startIdx: blockStart,
+                    endIdx: i - 1,
+                    count: consecutiveCount,
+                    side: currentSide,
+                    indices: Array.from({ length: consecutiveCount }, (_, j) => blockStart + j)
+                });
+            }
+            currentSide = null;
+            consecutiveCount = 0;
+            blockStart = -1;
+            continue;
+        }
+
         const result = round.result;
 
         // 和局打斷連續計數
@@ -2105,6 +2130,15 @@ function findConsecutiveFourCardBlocks(rounds) {
     let blockStart = -1;
 
     for (let i = 0; i < rounds.length; i++) {
+        // 穿越段視為打斷連續性
+        if (rounds[i] && rounds[i].isTraverse) {
+            if (consecutiveCount >= 5) {
+                blocks.push({ startIdx: blockStart, endIdx: i - 1, count: consecutiveCount });
+            }
+            consecutiveCount = 0;
+            blockStart = -1;
+            continue;
+        }
         const cardCount = (rounds[i] && Array.isArray(rounds[i].cards)) ? rounds[i].cards.length : 0;
 
         if (cardCount === 4) {
@@ -2916,14 +2950,9 @@ function verifyShoeRules(rounds, options = {}) {
         const is_t_round = Boolean(current_round.isT || hasFullHouse(current_round));
         const has_signal = current_round.cards.some(card => card.isSignalCard());
 
-        // 檢查 S 局 / T 局 邏輯
+        // 檢查 S 局 邏輯（T 局相關規則 4、6 已停用）
         if (is_t_round) {
-            // 規則 4: `三條(T局)下一局不是和`
-            if (true_result_next !== '和') {
-                log(`違規(4): 第 ${round_num} 局是 T局(三條)，但下一局 (第 ${next_round_num} 局) 實際結果是「${true_result_next}」(應為 和)`, 'error');
-                errors++;
-                violationRoundIndexes.add(i);
-            }
+            // 規則 4 已移除：三條不再要求下一局必須和
         } else if (has_signal) {
             // 規則 2: `S局(有訊號牌)下一局不是莊`
             if (true_result_next !== '莊') {
@@ -2938,12 +2967,7 @@ function verifyShoeRules(rounds, options = {}) {
                 errors++;
                 violationRoundIndexes.add(i);
             }
-            // 規則 6: `非三條局的下一局是和`
-            if (true_result_next === '和') {
-                log(`違規(6): 第 ${round_num} 局不是三條(T局)，但下一局 (第 ${next_round_num} 局) 是和局`, 'error');
-                errors++;
-                violationRoundIndexes.add(i);
-            }
+            // 規則 6 已移除：和局上一局不再要求必須是三條
         }
     }
 
@@ -2989,6 +3013,8 @@ function verifyShoeRules(rounds, options = {}) {
     let swapFailureCount = 0;
     rounds.forEach((round, idx) => {
         if (!round || !round.cards) return;
+        // 穿越段（A 段）不檢查無法對調
+        if (round.isTraverse) return;
 
         const swappedResult = swapFirstTwoCards(round);
         if (swappedResult === null) {
@@ -3198,7 +3224,7 @@ async function generateShoe() {
                 const four = preflightLimits.fourCardStats || { fourCardCount: 0, totalRounds: 0, rate: 0 };
                 const sideDiff = Math.abs(c.banker - (c.player + c.tie));
                 const sideText = preflightLimits.sideLimit ? `莊閒差距上限=${preflightLimits.sideLimit}` : '莊閒差距不檢查';
-                const tieText = preflightLimits.tieLimit ? `和局上限=${preflightLimits.tieLimit}` : '和局不檢查';
+                const tieText = (preflightLimits.tieLimit != null) ? `和局上限=${preflightLimits.tieLimit}` : '和局不檢查';
                 const fourText = preflightLimits.fourCardRateLimit ? `4張局上限=${preflightLimits.fourCardRateLimit}%` : '4張局不檢查';
                 log(`🔍 檢測到：莊=${c.banker}、閒=${c.player}、和=${c.tie}、差距=${sideDiff}、4張=${four.fourCardCount}/${four.totalRounds} (${four.rate.toFixed(1)}%)（${sideText}，${tieText}，${fourText}）`, 'info');
                 if (!preflightLimits.ok) {
@@ -3237,10 +3263,11 @@ async function generateShoe() {
             const _skipB6El = document.getElementById('skipBanker6');
             const _skipB6Checked = _skipB6El ? _skipB6El.checked : false;
 
-            const shouldProhibit = _skipB6Checked || _swapB6Target === 0;
-            const shouldEnforceMin = !shouldProhibit && _swapB6Target !== null && _swapB6Target > 0;
+            // 改成上限：空白=不檢查、有值=上限（包含 0=不出）
+            const shouldCheckB6 = _skipB6Checked || _swapB6Target !== null;
+            const b6Limit = _skipB6Checked ? 0 : _swapB6Target;
 
-            if (shouldProhibit || shouldEnforceMin) {
+            if (shouldCheckB6) {
                 let _swapB6Count = 0;
                 for (const rd of roundsToCheck) {
                     if (!rd || !Array.isArray(rd.cards) || rd.cards.length < 4) continue;
@@ -3249,20 +3276,11 @@ async function generateShoe() {
                     const hi = computeRoundHands(tmp);
                     if (hi && hi.bankerTotal === 6 && hi.playerTotal <= 5) _swapB6Count++;
                 }
-                if (shouldProhibit) {
-                    log(`🔍 對調莊6檢查：${_swapB6Count}/0 局（上限）`, 'info');
-                    if (_swapB6Count > 0) {
-                        log(`第 ${attempt} 次生成失敗：對調莊6 ${_swapB6Count} 局 > 上限 0，重新生成...`, 'warn');
-                        result = null;
-                        continue;
-                    }
-                } else {
-                    log(`🔍 對調莊6檢查：${_swapB6Count}/${_swapB6Target} 局（下限）`, 'info');
-                    if (_swapB6Count < _swapB6Target) {
-                        log(`第 ${attempt} 次生成失敗：對調莊6 ${_swapB6Count} 局 < 目標 ${_swapB6Target}，重新生成...`, 'warn');
-                        result = null;
-                        continue;
-                    }
+                log(`🔍 莊6檢查：${_swapB6Count}/${b6Limit} 局（上限）`, 'info');
+                if (_swapB6Count > b6Limit) {
+                    log(`第 ${attempt} 次生成失敗：莊6 ${_swapB6Count} 局 > 上限 ${b6Limit}，重新生成...`, 'warn');
+                    result = null;
+                    continue;
                 }
             }
 
@@ -3350,6 +3368,16 @@ async function generateShoe() {
                 }
             } catch (e) {
                 log(`⚠️ 自動卡色調整失敗: ${e && e.message ? e.message : e}`, 'error');
+            }
+        }
+
+        // 【愛心標記：B 段每段最後一局換 4 張愛心】
+        if (typeof applyHeartMarking === 'function') {
+            try {
+                applyHeartMarking(currentRounds);
+                refreshAnalysisAndRender({ mutate: false, skipVerify: true });
+            } catch (e) {
+                log(`⚠️ 愛心標記失敗: ${e && e.message ? e.message : e}`, 'error');
             }
         }
 
@@ -3619,6 +3647,10 @@ function buildPreviewGrid(deckCards, rounds) {
             if (seg === 'A') classes.push('segment-a');
             else if (seg === 'B') classes.push('segment-b');
             else if (seg === 'C') classes.push('segment-c');
+            // 愛心標記局內的「愛心卡」才加標記（只亮 4 張愛心本身）
+            if (round && round.isHeartMarker && card && card.suit === '♥') {
+                classes.push('heart-marker');
+            }
             grid[gridIndex] = {
                 classes,
                 value: gridValueFromCard(card),
@@ -3669,18 +3701,28 @@ function runAutoColorSwap_Signal(rounds) {
     log('SIG: 啟動「紅0/三條」專用的卡色邏輯...', 'info');
     $ROUNDS = rounds; // 儲存牌局資料
 
-    // 1. 找出所有 T 局 (三條局) 的索引
+    // 1. 找出所有 T 局 (三條局) 的索引 + 穿越段 + 跳過卡色的 B 末局都要鎖定
     const lockedFullRounds = new Set();
     const semiLockedRounds = new Set();
     const tRoundIndices = [];
+    let traverseLocked = 0;
+    let bSkipLocked = 0;
     $ROUNDS.forEach((round, idx) => {
         if (round?.isT) {
             lockedFullRounds.add(idx);
             tRoundIndices.push(idx);
         }
+        if (round?.isTraverse) {
+            lockedFullRounds.add(idx);
+            traverseLocked++;
+        }
+        if (round?.skipColorAdjust) {
+            lockedFullRounds.add(idx);
+            bSkipLocked++;
+        }
     });
 
-    log(`SIG: T局 (三條局) 已鎖定,共 ${tRoundIndices.length} 局`, 'info');
+    log(`SIG: T局 ${tRoundIndices.length}，穿越段 ${traverseLocked}，B段末2局 ${bSkipLocked} 已鎖定`, 'info');
 
     const sRoundSet = new Set(compute_sidx_for_segment($ROUNDS, 'A'));
 
@@ -3688,6 +3730,10 @@ function runAutoColorSwap_Signal(rounds) {
         if (ridx < 0 || ridx >= $ROUNDS.length) return false;
         const round = $ROUNDS[ridx];
         if (!round || round.segment === 'B') return false;
+        // 穿越段不參與卡色調整
+        if (round.isTraverse) return false;
+        // B 段每段末 2 局跳過卡色調整
+        if (round.skipColorAdjust) return false;
         if (!force && (lockedFullRounds.has(ridx) || semiLockedRounds.has(ridx))) return false;
 
         const patterns = getCardColorPatterns();
@@ -3979,22 +4025,21 @@ function calculateViolationStats(rounds) {
         const currentRound = rounds[i];
         const nextRound = rounds[(i + 1) % rounds.length];
         if (!currentRound || !nextRound) continue;
+        // 穿越段不檢查訊號牌違規（穿越段內 A、2 不當訊號牌）
+        if (currentRound.isTraverse || nextRound.isTraverse) continue;
         const nextTrue = getTrueResult(nextRound);
         if (!nextTrue) continue;
 
         let isViolation = false;
         if (isTRound(currentRound)) {
-            if (nextTrue !== '和') isViolation = true;
+            // T 局規則已停用（三條不再要求下一局必須和）
         } else if (hasSignal(currentRound)) {
             if (nextTrue !== '莊') isViolation = true;
         } else {
             if (nextTrue === '莊') isViolation = true;
         }
 
-        // 反向檢查：和局的上一局必須是三條(T局)
-        if (!isViolation && nextTrue === '和' && !isTRound(currentRound)) {
-            isViolation = true;
-        }
+        // 反向檢查（和局上一局必須是三條）已停用
 
         if (isViolation) {
             signalViolations++;
@@ -4015,6 +4060,16 @@ function calculateViolationStats(rounds) {
         let consecutiveCount = 0;
         let blockStart = -1;
         for (let i = 0; i < rounds.length; i++) {
+            // 穿越段視為打斷連續計數
+            if (rounds[i] && rounds[i].isTraverse) {
+                if (consecutiveCount >= 5) {
+                    blocks.push({ startIdx: blockStart, endIdx: i - 1, count: consecutiveCount, side: currentSide });
+                }
+                currentSide = null;
+                consecutiveCount = 0;
+                blockStart = -1;
+                continue;
+            }
             const side = getTrueResult(rounds[i]);
             if (side !== '莊' && side !== '閒') {
                 if (consecutiveCount >= 5) {
@@ -4063,6 +4118,8 @@ function calculateViolationStats(rounds) {
     for (let i = 0; i < rounds.length; i++) {
         const round = rounds[i];
         if (!round || !Array.isArray(round.cards)) continue;
+        // 穿越段不檢查藏底張數違規
+        if (round.isTraverse) continue;
         const handInfo = computeRoundHands(round.cards);
         const usedCardCount = (handInfo.playerCards?.length || 0) + (handInfo.bankerCards?.length || 0);
         const totalCardCount = round.cards.length;
@@ -4598,11 +4655,11 @@ function distributeRemainingCards(rounds, remainingCards) {
                         }
                     }
                 }
-                // 若 B6 已達目標，不能再讓最後一局變 B6
+                // 若 B6 已達上限，不能再讓最後一局變 B6
                 const swapB6TargetEl_ = document.getElementById('swapBanker6Target');
-                const swapB6Target_ = swapB6TargetEl_ && swapB6TargetEl_.value !== '' ? parseInt(swapB6TargetEl_.value) : 0;
+                const swapB6Limit_ = swapB6TargetEl_ && swapB6TargetEl_.value !== '' ? parseInt(swapB6TargetEl_.value) : null;
                 let currentB6Count_ = 0;
-                if (swapB6Target_ > 0) {
+                if (swapB6Limit_ !== null) {
                     for (const rd of rounds) {
                         if (!rd || !Array.isArray(rd.cards) || rd.cards.length < 4) continue;
                         if (rd === rounds[lastRoundIndex]) continue; // 排除最後一局（要替換）
@@ -4612,7 +4669,7 @@ function distributeRemainingCards(rounds, remainingCards) {
                         if (hi_ && hi_.bankerTotal === 6 && hi_.playerTotal <= 5) currentB6Count_++;
                     }
                 }
-                const b6Overflow = swapB6Target_ > 0 && currentB6Count_ >= swapB6Target_ && candidateIsB6;
+                const b6Overflow = swapB6Limit_ !== null && currentB6Count_ >= swapB6Limit_ && candidateIsB6;
                 const candidateOk = sensCandidate && !(sensCandidate.result === '和' && !prevIsT) && !b6Overflow;
                 if (candidateOk) {
                     copiedRound.cards = sensCandidate.ordered.map((c, pos) => {
@@ -4684,6 +4741,8 @@ function distributeRemainingCards(rounds, remainingCards) {
 
     for (let i = updatedRounds.length - 1; i >= 0 && allRemainingCards.length > 0; i--) {
         const round = updatedRounds[i];
+        // 穿越段不可被殘牌動到，否則會破壞穿越條件
+        if (round && round.isTraverse) continue;
         const currentCardCount = round.cards.length;
 
         // 計算這一局最多可以補幾張（補到 6 張為止）
@@ -4726,10 +4785,10 @@ function distributeRemainingCards(rounds, remainingCards) {
                         continue;
                     }
 
-                    // B6 達目標後，不能讓補牌產生新的 B6
-                    const _swapB6TargetEl = document.getElementById('swapBanker6Target');
-                    const _swapB6Target = _swapB6TargetEl && _swapB6TargetEl.value !== '' ? parseInt(_swapB6TargetEl.value) : 0;
-                    if (_swapB6Target > 0) {
+                    // B6 達上限後，不能讓補牌產生新的 B6
+                    const _swapB6LimitEl = document.getElementById('swapBanker6Target');
+                    const _swapB6Limit = _swapB6LimitEl && _swapB6LimitEl.value.trim() !== '' ? parseInt(_swapB6LimitEl.value) : null;
+                    if (_swapB6Limit !== null) {
                         const _tmp = candidate.ordered.map(c => c.clone ? c.clone() : { ...c });
                         if (_tmp.length >= 2) {
                             [_tmp[0], _tmp[1]] = [_tmp[1], _tmp[0]];
@@ -4745,10 +4804,10 @@ function distributeRemainingCards(rounds, remainingCards) {
                                     const _h2 = computeRoundHands(_t2);
                                     if (_h2 && _h2.bankerTotal === 6 && _h2.playerTotal <= 5) _curB6++;
                                 }
-                                if (_curB6 >= _swapB6Target) {
+                                if (_curB6 >= _swapB6Limit) {
                                     allRemainingCards.push(cardToAdd);
                                     failedAttempts++;
-                                    log(`  ✗ ${formatCardLabel(cardToAdd)} 補入後會讓 B6 超過目標 ${_swapB6Target}，改試下一張`, 'warn');
+                                    log(`  ✗ ${formatCardLabel(cardToAdd)} 補入後會讓 B6 超過上限 ${_swapB6Limit}，改試下一張`, 'warn');
                                     continue;
                                 }
                             }
@@ -4875,15 +4934,15 @@ function recalculateRoundsAfterDistribution(rounds) {
 const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbypt3_PnEL5TgdDPaBwg1M5bWAjQMR9dD5Jslicn3eZCtuNSTtqO35RafhQpuX-l9_m/exec';
 
 /**
- * 產生下一個導出檔名：F01.xlsx, F02.xlsx, ...，編號存於 localStorage 自動遞增
+ * 產生下一個導出檔名：L001.xlsx, L002.xlsx, ...，編號存於 localStorage 自動遞增
  */
 function getNextExportFilename() {
-    const key = 'at-export-counter';
+    const key = 'at-export-counter-l';
     const last = parseInt(localStorage.getItem(key) || '0', 10);
     const next = (Number.isFinite(last) && last >= 0 ? last : 0) + 1;
     localStorage.setItem(key, String(next));
-    const padded = next < 100 ? String(next).padStart(2, '0') : String(next);
-    return `F${padded}.xlsx`;
+    const padded = String(next).padStart(3, '0');
+    return `L${padded}.xlsx`;
 }
 
 /**
@@ -5185,6 +5244,8 @@ function calculateCannotSwapViolations(rounds) {
     for (let i = 0; i < rounds.length; i++) {
         const round = rounds[i];
         if (!round || !Array.isArray(round.cards)) continue;
+        // 穿越段（A 段）不檢查無法對調
+        if (round.isTraverse) continue;
 
         // 檢查原始牌型是否能完成遊戲
         const canComplete = canCompleteGame(round);
@@ -5205,6 +5266,126 @@ function calculateCannotSwapViolations(rounds) {
     return { count: cannotSwapCount, rounds: cannotSwapRoundNums };
 }
 
+/**
+ * 愛心標記：B 段每段最後一局換成 4 張愛心，其他局不能有 4 張愛心
+ * 用花色交換（同 rank 不同 suit），不改變局的點數結果
+ */
+function applyHeartMarking(rounds) {
+    if (!Array.isArray(rounds)) {
+        log('💗 愛心標記：rounds 不是陣列，跳過', 'warn');
+        return;
+    }
+
+    const targetIdxSet = new Set();
+    rounds.forEach((r, i) => { if (r && r.isHeartMarker) targetIdxSet.add(i); });
+
+    log(`💗 愛心標記檢查：rounds.length=${rounds.length}，目標局=${targetIdxSet.size} 個`, 'info');
+
+    if (targetIdxSet.size === 0) {
+        log('💗 沒有 isHeartMarker 標記，跳過', 'warn');
+        return;
+    }
+
+    const countHearts = (round) => {
+        if (!round || !Array.isArray(round.cards)) return 0;
+        return round.cards.filter(c => c && c.suit === '♥').length;
+    };
+
+    const swapTwoCards = (rA, cA, rB, cB) => {
+        const a = rounds[rA] && rounds[rA].cards ? rounds[rA].cards[cA] : null;
+        const b = rounds[rB] && rounds[rB].cards ? rounds[rB].cards[cB] : null;
+        if (!a || !b) return false;
+        // 交換 isTraverseCard：紫色格子要留在原本位置（不跟著卡片走）
+        const aWasTraverse = !!a.isTraverseCard;
+        const bWasTraverse = !!b.isTraverseCard;
+        a.isTraverseCard = bWasTraverse;
+        b.isTraverseCard = aWasTraverse;
+        rounds[rA].cards[cA] = b;
+        rounds[rB].cards[cB] = a;
+        return true;
+    };
+
+    // Step 1：每個 target round 補滿 4 張愛心
+    for (const ti of targetIdxSet) {
+        const target = rounds[ti];
+        if (!target || !Array.isArray(target.cards)) continue;
+        let heartCount = countHearts(target);
+        let safety = 30;
+        while (heartCount < 4 && safety-- > 0) {
+            // 找一張本局非愛心的位置
+            let nonHeartIdx = -1;
+            for (let i = 0; i < target.cards.length; i++) {
+                if (target.cards[i] && target.cards[i].suit !== '♥') { nonHeartIdx = i; break; }
+            }
+            if (nonHeartIdx === -1) break;
+            const nonHeartRank = target.cards[nonHeartIdx].rank;
+
+            // 找另一個非 target 的同 rank 愛心（A 段也可以當來源；紫色標記留在原位）
+            let donor = null;
+            for (let ri = 0; ri < rounds.length; ri++) {
+                if (targetIdxSet.has(ri)) continue;
+                const r = rounds[ri];
+                if (!r || !Array.isArray(r.cards)) continue;
+                for (let ci = 0; ci < r.cards.length; ci++) {
+                    if (r.cards[ci] && r.cards[ci].rank === nonHeartRank && r.cards[ci].suit === '♥') {
+                        donor = { r: ri, c: ci };
+                        break;
+                    }
+                }
+                if (donor) break;
+            }
+            if (!donor) {
+                log(`💗 第 ${ti + 1} 局找不到 rank=${nonHeartRank} 的愛心牌可換`, 'warn');
+                break;
+            }
+            swapTwoCards(ti, nonHeartIdx, donor.r, donor.c);
+            heartCount++;
+        }
+        log(`💗 第 ${ti + 1} 局：${heartCount} 張愛心${heartCount >= 4 ? ' ✓' : ' ✗'}`, heartCount >= 4 ? 'success' : 'warn');
+    }
+
+    // Step 2：其他局（含 A 段）如果有 ≥4 張愛心，把多的愛心換成非愛心同 rank
+    for (let ri = 0; ri < rounds.length; ri++) {
+        if (targetIdxSet.has(ri)) continue;
+        const r = rounds[ri];
+        if (!r || !Array.isArray(r.cards)) continue;
+        let heartCount = countHearts(r);
+        let safety = 30;
+        while (heartCount >= 4 && safety-- > 0) {
+            // 找本局一張愛心
+            let heartIdx = -1;
+            for (let i = 0; i < r.cards.length; i++) {
+                if (r.cards[i] && r.cards[i].suit === '♥') { heartIdx = i; break; }
+            }
+            if (heartIdx === -1) break;
+            const heartRank = r.cards[heartIdx].rank;
+
+            // 找另一個非 target、非當前 round、不會因此變 4+ 愛心的同 rank 非愛心
+            let donor = null;
+            for (let oi = 0; oi < rounds.length; oi++) {
+                if (oi === ri || targetIdxSet.has(oi)) continue;
+                const or_ = rounds[oi];
+                if (!or_ || !Array.isArray(or_.cards)) continue;
+                if (countHearts(or_) >= 3) continue; // 換進來會超過 3 張愛心
+                for (let oci = 0; oci < or_.cards.length; oci++) {
+                    if (or_.cards[oci] && or_.cards[oci].rank === heartRank && or_.cards[oci].suit !== '♥') {
+                        donor = { r: oi, c: oci };
+                        break;
+                    }
+                }
+                if (donor) break;
+            }
+            if (!donor) {
+                log(`💗 第 ${ri + 1} 局有 ${heartCount} 張愛心，找不到可換的同 rank 非愛心`, 'warn');
+                break;
+            }
+            swapTwoCards(ri, heartIdx, donor.r, donor.c);
+            heartCount--;
+        }
+    }
+    log('💗 愛心標記完成', 'success');
+}
+
 function collectCardColorViolationRounds(rounds) {
     const violationRounds = [];
     if (!Array.isArray(rounds) || rounds.length === 0) {
@@ -5215,6 +5396,9 @@ function collectCardColorViolationRounds(rounds) {
     for (let i = 0; i < rounds.length; i++) {
         const round = rounds[i];
         if (!round || !Array.isArray(round.cards) || round.cards.length < 4) continue;
+        // 穿越段、B 段末 2 局不檢查卡色違規
+        if (round.isTraverse) continue;
+        if (round.skipColorAdjust) continue;
         const colors = round.cards.slice(0, 4).map(c => (c && c.back_color) ? c.back_color : '?').join('');
         if (!validSet.has(colors)) {
             violationRounds.push(i + 1);
@@ -5366,6 +5550,13 @@ async function exportRoundsAsExcelWithDrive() {
                 if (classes.includes('tbox-right')) wsCell.border.right = borderBold;
                 if (classes.includes('tbox-top')) wsCell.border.top = borderBold;
                 if (classes.includes('tbox-bottom')) wsCell.border.bottom = borderBold;
+                // 愛心標記局：粉紅色粗框（assistant 會偵測這個邊框顏色）
+                if (classes.includes('heart-marker')) {
+                    const heartBorder = { style: 'medium', color: { argb: 'FFFF1493' } };
+                    wsCell.border = {
+                        top: heartBorder, left: heartBorder, bottom: heartBorder, right: heartBorder
+                    };
+                }
             }
         }
 
