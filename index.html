@@ -1974,6 +1974,11 @@ tr.highlighted-row { background: rgba(255,170,0,0.05) !important; }
                     <button type="button" class="generate-stop-btn signal-preset-btn" onclick="setSignalPreset('allA2')" title="全花色 A 2">A2</button>
                     <button type="button" class="generate-stop-btn signal-preset-btn" onclick="setSignalPreset('hd0')" title="♥♦ 0點 (10JQK)">♥0</button>
                 </div>
+                <button type="button" class="generate-stop-btn random-shoe-btn" onclick="generateRandomShoe()" title="416 張隨機洗亂後直接發，不套用任何條件">隨機</button>
+                <label class="mixed-color-toggle" title="切換右上方違規統計區的顯示">
+                    <input type="checkbox" id="violationStatsToggle" checked>
+                    <span>顯示違規</span>
+                </label>
             </div>
 
             <!-- 卡片3：回復分析檢查條件設定 -->
@@ -2372,6 +2377,55 @@ tr.highlighted-row { background: rgba(255,170,0,0.05) !important; }
                             'info'
                         );
                     }
+                });
+            }
+
+            // ===== 顯示違規開關 =====
+            // 用 <style> 注入 class 來控制顯示狀態，避免被後續 re-render 蓋掉
+            const violationToggle = document.getElementById('violationStatsToggle');
+            const STYLE_ID = 'violation-hide-style';
+            const ensureHideStyle = () => {
+                if (document.getElementById(STYLE_ID)) return;
+                const s = document.createElement('style');
+                s.id = STYLE_ID;
+                s.textContent = `
+                    .hide-violation-stats .violation-stats { display: none !important; }
+                    .hide-violation-stats .rounds-table tr.violation-row td,
+                    .hide-violation-stats .rounds-table tr.violation-row:hover td,
+                    .hide-violation-stats .rounds-table tr.card-count-mismatch td,
+                    .hide-violation-stats .rounds-table tr.card-count-mismatch:hover td,
+                    .hide-violation-stats .rounds-table tr.card-color-violation-row td,
+                    .hide-violation-stats .rounds-table tr.card-color-violation-row:hover td,
+                    .hide-violation-stats .rounds-table tr.banker-six-win-row td,
+                    .hide-violation-stats .rounds-table tr.banker-six-win-row td.result-cell.outcome-banker {
+                        background: inherit !important;
+                        border-bottom: 1px solid var(--border, rgba(0,0,0,0.1)) !important;
+                        color: inherit !important;
+                    }
+                    .hide-violation-stats .rounds-table td.swap-banker-six-result {
+                        color: inherit !important;
+                        text-shadow: none !important;
+                        font-weight: inherit !important;
+                        font-size: inherit !important;
+                    }
+                `;
+                document.head.appendChild(s);
+            };
+            ensureHideStyle();
+            const applyViolationVisibility = (show) => {
+                document.body.classList.toggle('hide-violation-stats', !show);
+            };
+            if (violationToggle) {
+                try {
+                    const v = localStorage.getItem('show_violation_stats');
+                    violationToggle.checked = (v === null) ? true : (v === '1');
+                } catch (e) {
+                    violationToggle.checked = true;
+                }
+                applyViolationVisibility(violationToggle.checked);
+                violationToggle.addEventListener('change', () => {
+                    try { localStorage.setItem('show_violation_stats', violationToggle.checked ? '1' : '0'); } catch (e) {}
+                    applyViolationVisibility(violationToggle.checked);
                 });
             }
         });

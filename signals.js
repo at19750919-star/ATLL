@@ -3022,6 +3022,49 @@ function createFullDeck() {
     return deck;
 }
 
+// 隨機模式：416 張洗亂後直接依序發牌，不套用任何條件、不調整、不驗證、不修復
+function generateRandomShoe() {
+    try {
+        const logArea = document.getElementById('logArea');
+        if (logArea) logArea.innerHTML = '';
+        const roundsBody = document.getElementById('roundsBody');
+        if (roundsBody) roundsBody.innerHTML = '';
+
+        if (typeof window !== 'undefined') {
+            window.__importedShoeMode = true; // 跳過所有後續違規檢查
+            window.__roundsModified = false;
+        }
+
+        if (typeof applySignalConfig === 'function') applySignalConfig();
+
+        const deck = build_shuffled_deck();
+        log(`🎲 隨機模式：洗 ${deck.length} 張牌`, 'info');
+
+        const sim = new Simulator(deck);
+        const rounds = [];
+        let pos = 0;
+        while (pos + 3 < deck.length) {
+            const r = sim.simulate_round(pos, { no_swap: true });
+            if (!r || !Array.isArray(r.cards) || r.cards.length === 0) break;
+            r.segment = '隨機';
+            rounds.push(r);
+            pos += r.cards.length;
+        }
+
+        currentRounds = rounds;
+        log(`🎲 共 ${rounds.length} 局，剩 ${deck.length - pos} 張未發`, 'success');
+
+        if (typeof refreshAnalysisAndRender === 'function') {
+            refreshAnalysisAndRender({ mutate: false, skipVerify: true });
+        }
+        if (typeof setEditButtonsAvailability === 'function') setEditButtonsAvailability(true);
+        if (typeof resetEditState === 'function') resetEditState();
+    } catch (e) {
+        log(`隨機模式失敗: ${e && e.message ? e.message : e}`, 'error');
+    }
+}
+if (typeof window !== 'undefined') window.generateRandomShoe = generateRandomShoe;
+
 // 主要生成函數 - 使用完整的ABC段排列並自動分析
 // 生成整副牌靴並進行分析
 async function generateShoe() {
