@@ -268,6 +268,10 @@ function persistCardColorMixedMode(enabled) {
     return CARD_COLOR_MIXED_MODE;
 }
 
+function isValidCardColorPattern(p) {
+    return typeof p === 'string' && /^[RB]{4}$/.test(p);
+}
+
 function loadCardColorPatternsSelected() {
     if (typeof window === 'undefined' || !window.localStorage) return [];
     try {
@@ -275,7 +279,7 @@ function loadCardColorPatternsSelected() {
         if (!v) return [];
         const parsed = JSON.parse(v);
         if (!Array.isArray(parsed)) return [];
-        return parsed.filter(p => VALID_CARD_COLOR_PATTERNS.includes(p));
+        return parsed.filter(isValidCardColorPattern);
     } catch (e) {
         return [];
     }
@@ -285,7 +289,7 @@ let CARD_COLOR_PATTERNS_SELECTED = loadCardColorPatternsSelected();
 
 function persistCardColorPatternsSelected(list) {
     const sanitized = Array.isArray(list)
-        ? list.filter(p => VALID_CARD_COLOR_PATTERNS.includes(p))
+        ? list.filter(isValidCardColorPattern)
         : [];
     CARD_COLOR_PATTERNS_SELECTED = sanitized;
     if (typeof window !== 'undefined') {
