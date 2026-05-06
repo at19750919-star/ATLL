@@ -447,44 +447,81 @@ input { font: inherit; color: inherit; }
 }
 
 /* === Card 4 卡色 === */
-.cardback-pattern-row {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
-}
-.cardback-pattern {
+.cardback-builder-row {
   display: flex;
-  gap: 4px;
-  padding: 6px 8px;
+  align-items: center;
+  gap: 10px;
+}
+.cardback-builder {
+  display: flex;
+  gap: 6px;
+}
+.cb-builder {
+  width: 22px;
+  height: 32px;
+  border-radius: 3px;
+  border: 1.5px solid var(--ink);
+  cursor: pointer;
+  transition: transform 0.08s, box-shadow 0.08s;
+}
+.cb-builder:hover { transform: translate(-1px, -1px); box-shadow: 1px 1px 0 var(--ink); }
+.cb-builder.cb-red { background: #d94c3a; }
+.cb-builder.cb-blue { background: #1c3a8c; }
+.cb-add-btn, .cb-confirm-btn {
+  height: 30px;
+  padding: 0 12px;
+  border: 1.5px solid var(--ink);
+  border-radius: 4px;
+  background: var(--bg-paper);
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 12px;
+}
+.cb-confirm-btn { background: var(--accent); }
+.cardback-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+  min-height: 24px;
+}
+.cardback-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
   background: var(--bg-paper);
   border: 1.5px solid var(--ink);
   border-radius: 4px;
-  cursor: pointer;
-  align-items: center;
-  justify-content: center;
-  transition: transform 0.08s, box-shadow 0.08s;
-}
-.cardback-pattern:hover {
-  transform: translate(-1px, -1px);
-  box-shadow: 1px 1px 0 var(--ink);
-}
-.cardback-pattern[data-on="true"] {
-  background: var(--accent);
-  box-shadow: inset 1px 1px 0 rgba(0,0,0,0.2);
 }
 .cb-mini {
-  width: 12px;
-  height: 18px;
+  width: 10px;
+  height: 16px;
   border-radius: 2px;
   border: 1px solid var(--ink);
   display: inline-block;
 }
 .cb-mini.cb-red { background: #d94c3a; }
 .cb-mini.cb-blue { background: #1c3a8c; }
+.cb-chip-mini-row { display: inline-flex; gap: 2px; }
+.cb-chip-remove {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--text-tertiary);
+  padding: 0 2px;
+  font-size: 14px;
+  line-height: 1;
+}
+.cb-chip-remove:hover { color: var(--banker); }
+.cardback-footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
 .cardback-hint {
   font-size: 10px;
   color: var(--text-tertiary);
-  margin-top: 6px;
   letter-spacing: 0.05em;
 }
 
@@ -1809,33 +1846,20 @@ td.swap-banker-six-result { color: var(--duizhuang) !important; font-weight: 900
                     <span class="card-meta">CARD COLOR</span>
                 </header>
                 <div class="card-body">
-                    <div class="cardback-pattern-row" id="cardbackPatternRow">
-                        <a class="cardback-pattern" href="javascript:void(0)" data-pattern="BBBR" title="BBBR">
-                            <span class="cb-mini cb-blue"></span>
-                            <span class="cb-mini cb-blue"></span>
-                            <span class="cb-mini cb-blue"></span>
-                            <span class="cb-mini cb-red"></span>
-                        </a>
-                        <a class="cardback-pattern" href="javascript:void(0)" data-pattern="RRRB" title="RRRB">
-                            <span class="cb-mini cb-red"></span>
-                            <span class="cb-mini cb-red"></span>
-                            <span class="cb-mini cb-red"></span>
-                            <span class="cb-mini cb-blue"></span>
-                        </a>
-                        <a class="cardback-pattern" href="javascript:void(0)" data-pattern="BBRR" title="BBRR">
-                            <span class="cb-mini cb-blue"></span>
-                            <span class="cb-mini cb-blue"></span>
-                            <span class="cb-mini cb-red"></span>
-                            <span class="cb-mini cb-red"></span>
-                        </a>
-                        <a class="cardback-pattern" href="javascript:void(0)" data-pattern="RRBB" title="RRBB">
-                            <span class="cb-mini cb-red"></span>
-                            <span class="cb-mini cb-red"></span>
-                            <span class="cb-mini cb-blue"></span>
-                            <span class="cb-mini cb-blue"></span>
-                        </a>
+                    <div class="cardback-builder-row">
+                        <div class="cardback-builder" id="cardbackBuilder">
+                            <span class="cb-builder cb-blue" data-pos="0"></span>
+                            <span class="cb-builder cb-blue" data-pos="1"></span>
+                            <span class="cb-builder cb-blue" data-pos="2"></span>
+                            <span class="cb-builder cb-red" data-pos="3"></span>
+                        </div>
+                        <button type="button" class="cb-add-btn" id="cardbackAddBtn">+ 新增</button>
                     </div>
-                    <div class="cardback-hint" id="cardbackHint">未選表示隨機</div>
+                    <div class="cardback-list" id="cardbackList"></div>
+                    <div class="cardback-footer">
+                        <button type="button" class="cb-confirm-btn" id="cardbackConfirmBtn">確定</button>
+                        <span class="cardback-hint" id="cardbackHint">未加入=隨機</span>
+                    </div>
                 </div>
             </section>
         </aside>
@@ -2147,50 +2171,90 @@ td.swap-banker-six-result { color: var(--duizhuang) !important; font-weight: 900
                 });
             }
 
-            // Card 4：卡色 pattern 多選
-            const cardbackRow = document.getElementById('cardbackPatternRow');
+            // Card 4：卡色 pattern 編輯器
+            const cardbackBuilder = document.getElementById('cardbackBuilder');
+            const cardbackAddBtn = document.getElementById('cardbackAddBtn');
+            const cardbackList = document.getElementById('cardbackList');
+            const cardbackConfirmBtn = document.getElementById('cardbackConfirmBtn');
             const cardbackHint = document.getElementById('cardbackHint');
-            if (cardbackRow) {
-                let initial = [];
+            if (cardbackBuilder && cardbackAddBtn && cardbackList && cardbackConfirmBtn) {
+                let pendingPatterns = [];
                 try {
                     const raw = localStorage.getItem('card_color_patterns_selected');
                     if (raw) {
                         const parsed = JSON.parse(raw);
-                        if (Array.isArray(parsed)) initial = parsed;
+                        if (Array.isArray(parsed)) pendingPatterns = parsed.filter(p => /^[RB]{4}$/.test(p));
                     }
-                } catch(e) { initial = []; }
-                const validSet = new Set(['BBBR','RRRB','BBRR','RRBB']);
-                const initialSet = new Set(initial.filter(p => validSet.has(p)));
+                } catch(e) { pendingPatterns = []; }
 
-                const syncHint = () => {
-                    const selected = Array.from(cardbackRow.querySelectorAll('.cardback-pattern[data-on="true"]')).map(a => a.dataset.pattern);
+                const readBuilder = () => {
+                    return Array.from(cardbackBuilder.querySelectorAll('.cb-builder'))
+                        .map(el => el.classList.contains('cb-red') ? 'R' : 'B')
+                        .join('');
+                };
+                const renderList = () => {
+                    cardbackList.innerHTML = '';
+                    pendingPatterns.forEach((pat, idx) => {
+                        const chip = document.createElement('span');
+                        chip.className = 'cardback-chip';
+                        const row = document.createElement('span');
+                        row.className = 'cb-chip-mini-row';
+                        pat.split('').forEach(c => {
+                            const m = document.createElement('span');
+                            m.className = 'cb-mini ' + (c === 'R' ? 'cb-red' : 'cb-blue');
+                            row.appendChild(m);
+                        });
+                        const rm = document.createElement('span');
+                        rm.className = 'cb-chip-remove';
+                        rm.textContent = '×';
+                        rm.title = '移除';
+                        rm.addEventListener('click', () => {
+                            pendingPatterns.splice(idx, 1);
+                            renderList();
+                        });
+                        chip.appendChild(row);
+                        chip.appendChild(rm);
+                        cardbackList.appendChild(chip);
+                    });
                     if (cardbackHint) {
-                        cardbackHint.textContent = selected.length === 0
-                            ? '未選表示隨機'
-                            : '已選：' + selected.join(' / ');
+                        cardbackHint.textContent = pendingPatterns.length === 0
+                            ? '未加入=隨機'
+                            : '共 ' + pendingPatterns.length + ' 組';
                     }
                 };
 
-                cardbackRow.querySelectorAll('.cardback-pattern').forEach(el => {
-                    const p = el.dataset.pattern;
-                    el.setAttribute('data-on', initialSet.has(p) ? 'true' : 'false');
-                    el.addEventListener('click', (ev) => {
-                        ev.preventDefault();
-                        const on = el.getAttribute('data-on') === 'true';
-                        el.setAttribute('data-on', on ? 'false' : 'true');
-                        const selected = Array.from(cardbackRow.querySelectorAll('.cardback-pattern[data-on="true"]')).map(a => a.dataset.pattern);
-                        if (typeof persistCardColorPatternsSelected === 'function') {
-                            persistCardColorPatternsSelected(selected);
-                        }
-                        syncHint();
-                        if (typeof log === 'function') {
-                            log(selected.length === 0
-                                ? '卡色 pattern：隨機'
-                                : '卡色 pattern：' + selected.join(' / '), 'info');
+                cardbackBuilder.querySelectorAll('.cb-builder').forEach(el => {
+                    el.addEventListener('click', () => {
+                        if (el.classList.contains('cb-red')) {
+                            el.classList.remove('cb-red');
+                            el.classList.add('cb-blue');
+                        } else {
+                            el.classList.remove('cb-blue');
+                            el.classList.add('cb-red');
                         }
                     });
                 });
-                syncHint();
+
+                cardbackAddBtn.addEventListener('click', () => {
+                    const pat = readBuilder();
+                    if (!pendingPatterns.includes(pat)) {
+                        pendingPatterns.push(pat);
+                        renderList();
+                    }
+                });
+
+                cardbackConfirmBtn.addEventListener('click', () => {
+                    if (typeof persistCardColorPatternsSelected === 'function') {
+                        persistCardColorPatternsSelected(pendingPatterns.slice());
+                    }
+                    if (typeof log === 'function') {
+                        log(pendingPatterns.length === 0
+                            ? '卡色 pattern：隨機'
+                            : '卡色 pattern：' + pendingPatterns.join(' / '), 'info');
+                    }
+                });
+
+                renderList();
             }
 
             const violationToggle = document.getElementById('violationStatsToggle');
