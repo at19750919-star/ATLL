@@ -33,11 +33,22 @@
         return parseInt(rank) || 0;
     }
 
-    // 段內是否含 A 或 2
-    function segmentHasA2(deck, start, length) {
+    // 段內是否含被排除的點數（整段）
+    function segmentHasExcluded(deck, start, length, excludePoints) {
+        if (!excludePoints || excludePoints.size === 0) return false;
         for (let i = start; i < start + length; i++) {
-            const rank = deck[i].rank || deck[i].value;
-            if (rank === 'A' || rank === '1' || rank === '2') return true;
+            if (excludePoints.has(pointOf(deck[i]))) return true;
+        }
+        return false;
+    }
+
+    // 段內第一局是否含被排除的點數
+    function segmentFirstHandHasExcluded(deck, start, length, excludePoints) {
+        if (!excludePoints || excludePoints.size === 0) return false;
+        const firstHandSize = handSizeAt(deck, start, start + length);
+        if (!firstHandSize) return false;
+        for (let i = start; i < start + firstHandSize; i++) {
+            if (excludePoints.has(pointOf(deck[i]))) return true;
         }
         return false;
     }
@@ -322,11 +333,20 @@
      * 隨機產生一個符合條件的點數模板
      */
     function generateTemplate(length, opts) {
-        const { tieLast = true, noA2 = true, firstSensitive = true, maxTries = 200000 } = opts;
-        const pool = noA2 ? [0, 3, 4, 5, 6, 7, 8, 9] : [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+        const { tieLast = true, excludePoints = null, firstSensitive = true, roundCount = null, maxTries = 200000 } = opts;
+        const basePool = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
         for (let i = 0; i < maxTries; i++) {
             const arr = new Array(length);
-            for (let j = 0; j < length; j++) arr[j] = pool[Math.floor(Math.random() * pool.length)];
+            for (let j = 0; j < length; j++) arr[j] = basePool[Math.floor(Math.random() * basePool.length)];
+            // 只排除第一局含有的點數
+            if (excludePoints && excludePoints.size > 0) {
+                const fh = simulatePointHand(arr, 0);
+                if (fh) {
+                    let hit = false;
+                    for (let k = 0; k < fh.size; k++) { if (excludePoints.has(arr[k])) { hit = true; break; } }
+                    if (hit) continue;
+                }
+            }
             if (tieLast && length === 14) {
                 // 剪枝：pos9=pos10=0 大幅提升和局命中率
                 arr[8] = 0;
@@ -339,6 +359,7 @@
             if (!pointsTraverse(arr)) continue;
             if (tieLast && !pointsTieLast(arr)) continue;
             if (firstSensitive && !firstHandSensitive(arr)) continue;
+            if (roundCount !== null && countRoundsInTemplate(arr) !== roundCount) continue;
             return arr;
         }
         return null;
@@ -381,12 +402,25 @@
      *
      * @returns {Array<{cards: Card[], length: number}> | null}
      */
+    function countRoundsInTemplate(arr) {
+        const limit = arr.length;
+        let cur = 0, count = 0;
+        while (cur < limit) {
+            const sz = handSize(arr, cur, limit);
+            if (sz === null) return -1;
+            cur += sz;
+            count++;
+        }
+        return count;
+    }
+
     function pickTraverseSegments(deck, options = {}) {
         const count = options.count || 3;
         const lengths = options.lengths || [14, 13, 12, 11];
         const tieLast = options.tieLast !== false;
-        const noA2 = options.noA2 !== false;
+        const excludePoints = options.excludePoints instanceof Set ? options.excludePoints : new Set();
         const firstSensitive = options.firstSensitive !== false; // 預設要求首局敏感
+        const roundCount = options.roundCount || null; // null = 不限制局數
         const logFn = options.log || (() => {});
         const buildMode = options.buildMode || 'auto'; // 'auto' | 'inline' | 'construct'
 
@@ -399,7 +433,7 @@
                 if (found.length >= count) break;
                 const candidates = [];
                 for (let start = 0; start + length <= deck.length; start++) {
-                    if (noA2 && segmentHasA2(deck, start, length)) continue;
+                    if (segmentFirstHandHasExcluded(deck, start, length, excludePoints)) continue;
                     if (!isTraverseSegment(deck, start, length)) continue;
                     if (tieLast && !lastHandAllTie(deck, start, length)) continue;
                     if (firstSensitive) {
@@ -407,6 +441,11 @@
                         const points = [];
                         for (let i = 0; i < length; i++) points.push(pointOf(deck[start + i]));
                         if (!firstHandSensitive(points)) continue;
+                    }
+                    if (roundCount !== null) {
+                        const points = [];
+                        for (let i = 0; i < length; i++) points.push(pointOf(deck[start + i]));
+                        if (countRoundsInTemplate(points) !== roundCount) continue;
                     }
                     candidates.push(start);
                 }
@@ -441,7 +480,7 @@
                 let consecutiveFails = 0;
                 const MAX_FAILS = 100;
                 while (found.length < count && consecutiveFails < MAX_FAILS) {
-                    const template = generateTemplate(length, { tieLast, noA2, firstSensitive });
+                    const template = generateTemplate(length, { tieLast, excludePoints, firstSensitive, roundCount });
                     if (!template) {
                         logFn(`⚠️ 建構模板失敗（長度 ${length}）`, 'warn');
                         break;

@@ -1280,9 +1280,9 @@ const ROUNDS_TABLE_COLUMNS = [
     { key: 'index', label: '局', cellClass: 'minor-column' },
     { key: 'cards', label: '卡牌', headerClass: 'cards-column', cellClass: 'cards-column' },
     { key: 'colors', label: '卡色', headerClass: 'color-column', cellClass: 'color-column' },
-    { key: 'result', label: '終', cellClass: 'result-cell' },
-    { key: 'playerCards', label: '閒家牌', cellClass: 'hand-card-cell' },
-    { key: 'bankerCards', label: '莊家牌', cellClass: 'hand-card-cell' },
+    { key: 'result', label: '結', cellClass: 'result-cell' },
+    { key: 'playerCards', label: '閒家', cellClass: 'hand-card-cell' },
+    { key: 'bankerCards', label: '莊家', cellClass: 'hand-card-cell' },
     { key: 'playerPoints', label: '閒', cellClass: 'hand-point-cell minor-column' },
     { key: 'bankerPoints', label: '莊', cellClass: 'hand-point-cell minor-column' },
     { key: 'swapPreview', label: '調', cellClass: 'compare-cell' }
@@ -2571,7 +2571,7 @@ function verifyShoeRules(rounds, options = {}) {
             const sb = swappedInfo.bankerTotal;
             if (typeof sp === 'number' && typeof sb === 'number') {
                 const swappedResult = (sp === sb) ? '和' : (sp > sb ? '閒' : '莊');
-                if (swappedResult === '莊' && sb === 6 && sp <= 5) {
+                if (swappedResult === '莊' && sb === 6 && sp <= 5 && !bankerSixIndexes.has(i)) {
                     log(`提示: 第 ${round_num} 局對調後為莊6點且閒 ≤5（僅標記，不排除）`, 'warn');
                     swapBankerSixIndexes.add(i);
                 }
@@ -4105,119 +4105,64 @@ function updateViolationUI(stats) {
         };
     }
 
+    function _applyCard(el, card, hasViol) {
+        if (!card) return;
+        if (hasViol) { card.classList.remove('no-violation'); card.classList.add('has-violation'); }
+        else         { card.classList.remove('has-violation'); card.classList.add('no-violation'); }
+    }
+
     // 1. 訊號牌違規
     const signalEl = document.getElementById('signalViolationDetail');
-    const signalCard = signalEl ? signalEl.closest('.violation-card') : null;
     if (signalEl) {
-        if (stats.signalViolations === 0) {
-            signalEl.textContent = '無';
-            if (signalCard) {
-                signalCard.classList.remove('has-violation');
-                signalCard.classList.add('no-violation');
-            }
-        } else {
-            const rounds = stats.signalViolationRounds || [];
-            signalEl.textContent = rounds.length > 0 ? `第 ${rounds.join(', ')} 局` : `${stats.signalViolations} 處`;
-            if (signalCard) {
-                signalCard.classList.remove('no-violation');
-                signalCard.classList.add('has-violation');
-            }
-        }
+        const rounds = stats.signalViolationRounds || [];
+        const hasV = stats.signalViolations > 0;
+        signalEl.textContent = hasV ? (rounds.length > 0 ? rounds.join(', ') : `${stats.signalViolations}`) : '無';
+        _applyCard(signalEl, signalEl.closest('.violation-card'), hasV);
     }
 
     // 2. 連續5局4張違規
     const fourCardEl = document.getElementById('fourCardViolationDetail');
-    const fourCardCard = fourCardEl ? fourCardEl.closest('.violation-card') : null;
     if (fourCardEl) {
-        if (stats.fourCardViolations === 0) {
-            fourCardEl.textContent = '無';
-            if (fourCardCard) {
-                fourCardCard.classList.remove('has-violation');
-                fourCardCard.classList.add('no-violation');
-            }
-        } else {
-            const blocks = stats.fourCardBlocks || [];
-            const blockStr = blocks.map(b => `${b.startIdx + 1}-${b.endIdx + 1}`).join(', ');
-            fourCardEl.textContent = blockStr || `${stats.fourCardViolations} 處`;
-            if (fourCardCard) {
-                fourCardCard.classList.remove('no-violation');
-                fourCardCard.classList.add('has-violation');
-            }
-        }
+        const blocks = stats.fourCardBlocks || [];
+        const hasV = stats.fourCardViolations > 0;
+        fourCardEl.textContent = hasV ? (blocks.length > 0 ? blocks.map(b => `${b.startIdx+1}-${b.endIdx+1}`).join(', ') : `${stats.fourCardViolations}`) : '無';
+        _applyCard(fourCardEl, fourCardEl.closest('.violation-card'), hasV);
     }
 
-    // 3. 連續5局莊閒違規
+    // 3. 連續莊閒違規
     const streakEl = document.getElementById('streakViolationDetail');
-    const streakCard = streakEl ? streakEl.closest('.violation-card') : null;
     if (streakEl) {
-        if (stats.streakViolations === 0) {
-            streakEl.textContent = '無';
-            if (streakCard) {
-                streakCard.classList.remove('has-violation');
-                streakCard.classList.add('no-violation');
-            }
-        } else {
-            const blocks = stats.streakBlocks || [];
-            const blockStr = blocks.map(b => `${b.startIdx + 1}-${b.endIdx + 1}`).join(', ');
-            streakEl.textContent = blockStr || `${stats.streakViolations} 處`;
-            if (streakCard) {
-                streakCard.classList.remove('no-violation');
-                streakCard.classList.add('has-violation');
-            }
-        }
+        const blocks = stats.streakBlocks || [];
+        const hasV = stats.streakViolations > 0;
+        streakEl.textContent = hasV ? (blocks.length > 0 ? blocks.map(b => `${b.startIdx+1}-${b.endIdx+1}`).join(', ') : `${stats.streakViolations}`) : '無';
+        _applyCard(streakEl, streakEl.closest('.violation-card'), hasV);
     }
 
     // 4. 無法對調違規
     const cannotSwapEl = document.getElementById('cannotSwapViolationDetail');
-    const cannotSwapCard = cannotSwapEl ? cannotSwapEl.closest('.violation-card') : null;
     if (cannotSwapEl) {
-        if (stats.cannotSwapViolations > 0) {
-            const rounds = stats.cannotSwapRounds || [];
-            cannotSwapEl.textContent = rounds.length > 0 ? `第 ${rounds.join(', ')} 局` : `${stats.cannotSwapViolations} 處`;
-            if (cannotSwapCard) {
-                cannotSwapCard.classList.remove('no-violation');
-                cannotSwapCard.classList.add('has-violation');
-            }
-        } else {
-            cannotSwapEl.textContent = '無';
-            if (cannotSwapCard) {
-                cannotSwapCard.classList.remove('has-violation');
-                cannotSwapCard.classList.add('no-violation');
-            }
-        }
+        const rounds = stats.cannotSwapRounds || [];
+        const hasV = stats.cannotSwapViolations > 0;
+        cannotSwapEl.textContent = hasV ? (rounds.length > 0 ? rounds.join(', ') : `${stats.cannotSwapViolations}`) : '無';
+        _applyCard(cannotSwapEl, cannotSwapEl.closest('.violation-card'), hasV);
     }
 
     // 5. 其他違規（張數不符 + 卡色）
     const otherEl = document.getElementById('otherViolationDetail');
     const otherCard = otherEl ? otherEl.closest('.violation-card') : null;
     if (otherEl) {
-        const parts = [];
-
-        // 張數不符
+        const allRounds = [];
         if (stats.cardCountMismatchViolations > 0) {
             const rounds = stats.cardCountMismatchRounds || [];
-            parts.push(`張數:${rounds.length > 0 ? rounds.join(',') : stats.cardCountMismatchViolations}`);
+            if (rounds.length > 0) allRounds.push(...rounds); else allRounds.push(stats.cardCountMismatchViolations);
         }
-
-        // 卡色（只在已檢查時顯示）
         if (stats.cardColorChecked && stats.cardColorViolations > 0) {
             const rounds = stats.cardColorRounds || [];
-            parts.push(`卡色:${rounds.length > 0 ? rounds.join(',') : stats.cardColorViolations}`);
+            if (rounds.length > 0) allRounds.push(...rounds); else allRounds.push(stats.cardColorViolations);
         }
-
-        if (parts.length === 0) {
-            otherEl.textContent = '無';
-            if (otherCard) {
-                otherCard.classList.remove('has-violation');
-                otherCard.classList.add('no-violation');
-            }
-        } else {
-            otherEl.innerHTML = parts.join('<br>');
-            if (otherCard) {
-                otherCard.classList.remove('no-violation');
-                otherCard.classList.add('has-violation');
-            }
-        }
+        const hasV = allRounds.length > 0;
+        otherEl.textContent = hasV ? [...new Set(allRounds)].sort((a, b) => a - b).join(', ') : '無';
+        _applyCard(otherEl, otherCard, hasV);
     }
 
     // 同步卡色違規索引供表格亮顯

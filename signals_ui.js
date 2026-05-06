@@ -800,9 +800,6 @@ function clearSignalSelections() {
     document.querySelectorAll('.rank-checkbox').forEach(cb => {
         cb.checked = false;
     });
-    document.querySelectorAll('.rank-button').forEach(btn => {
-        btn.classList.remove('selected');
-    });
 
     updateSignalCardCount();
 }
@@ -941,36 +938,44 @@ function pack_all_sensitive_and_segment(deck) {
     log(`🔍 開始處理：總共 ${deck.length} 張牌`, 'info');
 
     // ===== 穿越段挑選（在敏感局掃描之前）=====
-    const traverseEnabled = (() => {
-        const el = document.getElementById('enableTraverseSegment');
-        return el && el.checked;
-    })();
+    const segCount = parseInt(document.getElementById('traverseSegCountToggle')?.value) || 0;
+    const traverseEnabled = segCount > 0;
     const traverseGroups = []; // [[round, round, ...], ...]
     const traverseUsedPos = new Set();
 
     if (traverseEnabled && typeof TraverseSegment !== 'undefined') {
-        const segCount = parseInt(document.getElementById('traverseSegCount')?.value) || 3;
-        const segLenMain = parseInt(document.getElementById('traverseSegLengthMain')?.value) || 14;
+        const segLenMin = parseInt(document.getElementById('traverseSegLenMin')?.value) || 11;
+        const segLenMax = parseInt(document.getElementById('traverseSegLenMax')?.value) || 14;
+        const firstSensitive = document.getElementById('traverseFirstSensitive')?.checked !== false;
         const tieLast = document.getElementById('traverseTieLast')?.checked !== false;
-        const noA2 = document.getElementById('traverseNoA2')?.checked !== false;
+        const isExcludeOn = document.getElementById('traverseExcludeToggle')?.classList.contains('selected');
+        const excludePoints = new Set();
+        if (isExcludeOn) {
+            document.querySelectorAll('.rank-button.traverse-excluded').forEach(btn => {
+                const rank = btn.dataset.value;
+                if (['10', 'J', 'Q', 'K'].includes(rank)) excludePoints.add(0);
+                else if (rank === 'A') excludePoints.add(1);
+                else { const n = parseInt(rank); if (!isNaN(n)) excludePoints.add(n); }
+            });
+        }
 
-        // 從主長度往下嘗試（找不到自動降）
         const lengths = [];
-        for (let L = segLenMain; L >= 11; L--) lengths.push(L);
+        for (let L = segLenMax; L >= segLenMin; L--) lengths.push(L);
 
-        log(`🟣 穿越段挑選：${segCount} 段 × ${segLenMain} 張（找不到自動降到 11）, 和局=${tieLast}, 排除A2=${noA2}`, 'info');
+        log(`🟣 穿越段挑選：${segCount} 段 × ${segLenMin}-${segLenMax} 張, 第一局敏感=${firstSensitive}, 和局=${tieLast}, 排除點數=${[...excludePoints].join(',') || '無'}`, 'info');
 
         const segments = TraverseSegment.pickTraverseSegments(deck, {
             count: segCount,
             lengths,
             tieLast,
-            noA2,
-            buildMode: 'auto',  // 先試 inline，找不到改建構
+            excludePoints,
+            firstSensitive,
+            buildMode: 'auto',
             log,
         });
 
         if (!segments) {
-            throw new Error(`穿越段挑選失敗：找不到 ${segCount} 段（11-${segLenMain} 張）`);
+            throw new Error(`穿越段挑選失敗：找不到 ${segCount} 段（${segLenMin}-${segLenMax} 張）`);
         }
 
         // 把每段拆成 round 物件
@@ -1732,6 +1737,10 @@ if (typeof _originalRefreshAnalysisAndRender === 'function') {
  * 監聽手動編輯事件，更新違規統計
  */
 function setupViolationStatsListeners() {
+    // 初始化：頁面載入時顯示「無」
+    if (typeof updateViolationUI === 'function') {
+        updateViolationUI(null);
+    }
     // 監聽套用按鈕
     const applyBtn = document.getElementById('btnApplyChanges');
     if (applyBtn) {
@@ -1928,7 +1937,7 @@ function updateRecoveryDisplay(result) {
     const pct16plus = total > 0 ? ((dist.range16plus || 0) / total * 100).toFixed(1) : '0.0';
 
     // 更新 DOM
-    document.getElementById('recoveryAvg').textContent = `平均 ${result.avgRounds} 局`;
+    document.getElementById('recoveryAvg').textContent = result.avgRounds;
     document.getElementById('recoveryStars').textContent = stars;
     
     const ratingTextEl = document.getElementById('recoveryRatingText');
@@ -2049,11 +2058,23 @@ function log(message, type = 'info') {
     if (!shouldDisplayLogMessage(message, type)) return;
 
     const logArea = document.getElementById('logArea');
-    const timestamp = new Date().toLocaleTimeString();
+    const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
     if (logArea) {
         const logEntry = document.createElement('div');
-        logEntry.className = type;
-        logEntry.textContent = `[${timestamp}] ${message}`;
+        logEntry.className = 'log-entry ' + type;
+        const iconMap = { info: '●', warn: '▲', error: '●', success: '●' };
+        const ico = document.createElement('span');
+        ico.className = 'ico';
+        ico.textContent = iconMap[type] || '●';
+        const ts = document.createElement('span');
+        ts.className = 'ts';
+        ts.textContent = timestamp;
+        const msg = document.createElement('span');
+        msg.className = 'msg';
+        msg.textContent = message;
+        logEntry.appendChild(ico);
+        logEntry.appendChild(ts);
+        logEntry.appendChild(msg);
         logArea.appendChild(logEntry);
         logArea.scrollTop = logArea.scrollHeight;
     }
@@ -2314,6 +2335,9 @@ function renderRoundsTable(rounds, analysis) {
             if (card.isTraverseCard) {
                 classes.push('traverse-card');
             }
+            if (round.isHeartMarker && card.suit === '♥') {
+                classes.push('heart-marker-card');
+            }
 
             return `<span class="${classes.join(' ')}" data-action="card" data-r="${index}" data-c="${cardIdx}">${card.short()}</span>`;
         }).join('');
@@ -2342,15 +2366,8 @@ function renderRoundsTable(rounds, analysis) {
         const totalCardCount = Array.isArray(round.cards) ? round.cards.length : 0;
         
         const resultDisplay = round.result || '';
-        const resultClass = outcomeClass(resultDisplay);
-        const swapOutcomeClass = outcomeClass(swapped_display);
-        
         const canComplete = canCompleteGame(round);
-        let finalDisplay = resultDisplay;
-        if (!canComplete) {
-            finalDisplay = '無法對調';
-        }
-        
+
         const hasSignalCard = round.cards && round.cards.some(card => typeof card.isSignalCard === 'function' && card.isSignalCard());
         if (hasSignalCard) {
             row.classList.add('s-signal-round');
@@ -2358,24 +2375,44 @@ function renderRoundsTable(rounds, analysis) {
         if (usedCardCount !== totalCardCount) {
             row.classList.add('card-count-mismatch');
         }
-        
+
+        // 結果 badge
+        const resultType = normalizeOutcome(resultDisplay);
+        const resultBadge = resultType
+            ? `<span class="outcome outcome-${resultType}">${resultDisplay}</span>`
+            : (resultDisplay ? `<span class="outcome outcome-none">${resultDisplay}</span>` : '');
+
+        const isSwapBankerSix = typeof swapBankerSixIndexes !== 'undefined' && swapBankerSixIndexes.has(index);
+        const isBankerSixWin = round.result === '莊' && Number(bankerPoints) === 6 && Number(playerPoints) <= 5;
+
+        // 調欄 badge
+        let swapCellContent;
+        if (!canComplete || !swapped_result) {
+            swapCellContent = '<span class="row-tag tag-warn-red">無法對調</span>';
+        } else if (isBankerSixWin) {
+            swapCellContent = '<span class="row-tag tag-warn-amber">莊6贏</span>';
+        } else if (isSwapBankerSix) {
+            swapCellContent = '<span class="row-tag tag-warn-purple">對調莊6</span>';
+        } else {
+            const swapType = normalizeOutcome(swapped_display);
+            swapCellContent = swapType ? `<span class="outcome outcome-${swapType}">${swapped_display}</span>` : (swapped_display || '');
+        }
+
         const columnContent = {
             index: index + 1,
             segment: typeDisplay,
             cards: cardsCell,
             colors: colorCell,
-            result: finalDisplay,
+            result: resultBadge,
             playerCards: playerHandText,
             bankerCards: bankerHandText,
             playerPoints,
             bankerPoints,
-            swapPreview: swapped_display
+            swapPreview: swapCellContent
         };
         const rowHtml = ROUNDS_TABLE_COLUMNS.map(col => {
             const classes = [];
             if (col.cellClass) classes.push(col.cellClass);
-            if (col.key === 'result' && resultClass) classes.push(resultClass);
-            if (col.key === 'swapPreview' && swapOutcomeClass) classes.push(swapOutcomeClass);
             const content = columnContent[col.key];
             const cellContent = (content === undefined || content === null) ? '' : content;
             const isBankerSixCell = col.key === 'bankerPoints' && Number(cellContent) === 6;
@@ -2563,7 +2600,11 @@ function renderDeckSummary(summary) {
     const byRankSuit = summary.by_rank_suit;
     const cardsByRankSuit = summary.cards_by_rank_suit || {};
     const suitTotals = summary.suit_totals || {};
-    let html = '<div class="summary-title">牌靴分布</div>';
+    const totalCards = summary.total_cards || 0;
+    const warnHtml = totalCards !== 416
+        ? `<div class="stats-warning">⚠ 張數異常：${totalCards} / 416</div>`
+        : '';
+    let html = warnHtml + '<div class="summary-title">牌靴分布</div>';
     html += '<table class="stats-table signal-table"><thead><tr><th></th>';
     html += ranks.map(r => `<th>${r}</th>`).join('');
     html += '<th>合計</th></tr></thead><tbody>';
@@ -2597,7 +2638,6 @@ function renderDeckSummary(summary) {
     for (const rank of ranks) {
         html += `<td>${columnTotals[rank] || 0}</td>`;
     }
-    const totalCards = summary.total_cards || 0;
     html += `<td>${totalCards}</td></tr>`;
     html += '</tbody></table>';
     html += `<div class="stats-total">牌靴總張數:<strong>${totalCards}/416</strong></div>`;
@@ -3118,6 +3158,7 @@ function ensureFloatingWidget() {
         document.body.insertAdjacentHTML('beforeend', widgetHTML);
         bindSimulatorLogic();
         const widget = document.getElementById('floatingAssistant');
+        widget.style.display = 'none';
         const closeBtn = document.getElementById('closeWidgetBtn');
         if (closeBtn) closeBtn.onclick = () => widget.style.display = 'none';
         let isDragging = false, offsetX = 0, offsetY = 0;
