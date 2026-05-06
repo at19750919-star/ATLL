@@ -7,7 +7,7 @@
     <script>(function(){var t=localStorage.getItem('at-theme');if(t!=='dark')document.documentElement.setAttribute('data-theme','light');})();</script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&family=Noto+Serif+TC:wght@500;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700;800&family=Roboto+Mono:wght@500;700&family=Noto+Serif+TC:wght@500;700;900&display=swap" rel="stylesheet">
     <style>
 /* ============================================
    創牌 — 大膽彩色版 v3
@@ -66,7 +66,7 @@
 
   --font-sans: 'Inter', -apple-system, 'Noto Sans TC', sans-serif;
   --font-display: 'Instrument Serif', 'Noto Serif TC', Georgia, serif;
-  --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+  --font-mono: 'Roboto Mono', 'SF Mono', monospace;
 
   --radius-sm: 4px;
   --radius-md: 8px;
@@ -335,7 +335,7 @@ input { font: inherit; color: inherit; }
 .left-pane {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 5px;
   position: sticky;
   top: 64px;
   max-height: calc(100vh - 78px);
@@ -382,7 +382,7 @@ input { font: inherit; color: inherit; }
   margin-bottom: 2px;
 }
 .medal-preview {
-  font-family: var(--font-mono); font-size: 12px;
+  font-family: var(--font-mono); font-size: 20px;
   color: var(--ink);
   font-weight: 600;
   word-break: break-all;
@@ -412,39 +412,58 @@ input { font: inherit; color: inherit; }
   border-radius: 4px;
   background: var(--bg-paper);
   border: 1.5px solid var(--ink);
-  font-size: 14px;
+  font-size: 26px;
   color: var(--suit-black);
   font-weight: 600;
   transition: transform 0.08s;
 }
 .suit-btn.red { color: var(--suit-red); }
 .suit-btn:hover { transform: translate(-1px, -1px); box-shadow: 1px 1px 0 var(--ink); }
-.suit-btn[data-on="true"] {
-  background: var(--accent);
-  color: var(--ink);
+.suit-btn[data-on="true"],
+.suit-btn.selected {
+  background: #cfe0f5;
+  color: #2660b3;
   box-shadow: inset 1px 1px 0 rgba(0,0,0,0.2);
 }
-.suit-btn[data-on="true"].red { color: var(--banker-strong); background: #ffd5cf; }
+.suit-btn[data-on="true"].red,
+.suit-btn.selected.red { color: var(--banker-strong); background: #ffd5cf; }
 
 .rank-row { display: flex; gap: 3px; flex-wrap: wrap; }
 .rank-btn {
-  min-width: 24px; height: 24px;
+  min-width: 28px; height: 28px;
   padding: 0 5px;
   display: inline-flex; align-items: center; justify-content: center;
   border-radius: 3px;
   background: var(--bg-paper);
   border: 1.5px solid var(--ink);
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 16px;
   font-weight: 700;
   color: var(--text-primary);
   transition: transform 0.08s;
 }
 .rank-btn:hover { transform: translate(-1px, -1px); box-shadow: 1px 1px 0 var(--ink); }
-.rank-btn[data-on="true"] {
-  background: var(--accent);
+.rank-btn[data-on="true"],
+.rank-btn.selected {
+  background: rgba(184, 132, 42, 0.35);
   color: var(--ink);
 }
+.trv-exclude-btn {
+  min-width: 24px; height: 22px;
+  padding: 0 4px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 3px;
+  background: var(--bg-paper);
+  border: 1.5px solid var(--ink);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-primary);
+  cursor: pointer;
+  user-select: none;
+}
+.trv-exclude-btn:hover { transform: translate(-1px, -1px); box-shadow: 1px 1px 0 var(--ink); }
+.trv-exclude-btn.selected { background: var(--banker); color: white; }
 
 /* === Card 4 卡色 === */
 .cardback-builder-row {
@@ -547,21 +566,24 @@ input { font: inherit; color: inherit; }
 .cbrange-add-btn {
   height: 24px;
   padding: 0 10px;
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid #6fae6f;
   border-radius: 4px;
-  background: var(--bg-paper);
+  background: #e6f4e6;
+  color: #2d6a2d;
   font-weight: 700;
   cursor: pointer;
   font-size: 11px;
 }
+.cbrange-add-btn:hover { background: #d4ecd4; }
 .cbrange-add-pattern-btn {
   width: 22px; height: 22px;
-  border: 1.5px solid var(--ink); border-radius: 3px;
-  background: var(--bg-paper); font-weight: 700;
+  border: 1.5px solid #6f8eae; border-radius: 3px;
+  background: #e6eef6; color: #2d4a6a; font-weight: 700;
   cursor: pointer; font-size: 15px; line-height: 1;
   display: inline-flex; align-items: center; justify-content: center;
   padding: 0;
 }
+.cbrange-add-pattern-btn:hover { background: #d4e2ec; }
 .cbrange-list { display: flex; flex-direction: column; gap: 8px; }
 .cbrange-item { display: flex; flex-direction: column; gap: 4px; }
 .cbrange-top { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
@@ -587,10 +609,14 @@ input { font: inherit; color: inherit; }
 .cbrange-swatch.cb-blank { background: transparent; border: 2px dashed #999; }
 .cb-mini.cb-blank { background: transparent; border: 1px dashed #999; }
 .cbrange-remove {
-  cursor: pointer; font-weight: 700;
-  color: var(--text-tertiary); font-size: 14px; line-height: 1; padding: 0 2px;
+  width: 22px; height: 22px;
+  border: 1.5px solid #c97a7a; border-radius: 3px;
+  background: #f6e6e6; color: #a04545; font-weight: 700;
+  cursor: pointer; font-size: 15px; line-height: 1;
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 0;
 }
-.cbrange-remove:hover { color: var(--banker); }
+.cbrange-remove:hover { background: #ecd4d4; }
 
 /* === Settings inputs === */
 .field-grid {
@@ -614,7 +640,7 @@ input { font: inherit; color: inherit; }
   border-radius: 4px;
   padding: 0 8px;
   font-family: var(--font-mono);
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 700;
   color: var(--text-primary);
   outline: none;
@@ -700,7 +726,7 @@ input { font: inherit; color: inherit; }
 }
 .toggle-row3 .toggle-btn {
   padding: 4px 8px 4px 4px;
-  font-size: 11px;
+  font-size: 15px;
 }
 .toggle-row3 .toggle-knob { width: 18px; height: 18px; }
 .toggle-btn {
@@ -813,7 +839,7 @@ input { font: inherit; color: inherit; }
 /* HUD */
 .hud {
   display: grid;
-  grid-template-columns: 300px 600px 420px;
+  grid-template-columns: 300px 600px 600px;
   gap: 14px;
   align-items: start;
 }
@@ -832,7 +858,7 @@ input { font: inherit; color: inherit; }
   padding: 14px;
   box-shadow: var(--shadow-card);
   position: relative;
-  height: 170px;
+  height: 180px;
   box-sizing: border-box;
   overflow: hidden;
 }
@@ -865,7 +891,7 @@ input { font: inherit; color: inherit; }
   margin-bottom: 7px;
 }
 .bpt-row .label {
-  font-size: 14px;
+  font-size: 20px;
   font-weight: 800;
   font-family: var(--font-display);
   text-align: center;
@@ -930,6 +956,28 @@ input { font: inherit; color: inherit; }
   border-radius: 12px;
   box-shadow: 1px 1px 0 var(--ink);
 }
+.recovery-main .six-card-target-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+.recovery-main .six-card-target-input {
+  width: 50px; height: 24px;
+  border: 1.5px solid var(--ink);
+  border-radius: 4px;
+  background: var(--bg-paper);
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+  font-family: var(--font-mono);
+  padding: 0 4px;
+}
+.recovery-main .six-card-target-input::placeholder {
+  color: var(--text-tertiary);
+  font-weight: 400;
+}
 
 .recovery-stats {
   display: grid;
@@ -948,15 +996,28 @@ input { font: inherit; color: inherit; }
   border-radius: 4px;
   border: 1.5px solid var(--ink);
   box-shadow: 1px 1px 0 var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  height: 45px;
+  box-sizing: border-box;
 }
 .recovery-stats .k {
-  display: block;
-  font-size: 9px;
+  font-size: 12px;
   color: var(--text-tertiary);
   font-weight: 700;
   letter-spacing: 0.05em;
+  flex-shrink: 0;
 }
-.recovery-stats .v { color: var(--ink); font-weight: 700; font-size: 12px; white-space: nowrap; }
+.recovery-stats .v { color: var(--ink); font-weight: 700; font-size: 12px; white-space: nowrap; margin-left: auto; }
+.recovery-stats .v.dev-warn   { color: #d97706; }
+.recovery-stats .v.dev-danger { color: var(--banker); }
+.recovery-stats .big-num,
+.recovery-stats #recoveryMaxCardsLeft,
+.recovery-stats #recoveryMaxRoundsLeft { font-size: 20px; }
+.recovery-stats .sub-num { font-size: 15px; }
 
 /* Inline Roadmap */
 .inline-roadmap-section {
@@ -970,16 +1031,17 @@ input { font: inherit; color: inherit; }
 .inline-roadmap-section:empty { display: none; }
 .irmap-row { display: flex; align-items: flex-start; gap: 8px; }
 .irmap-stats {
-  font-size: 11px;
+  font-size: 20px;
   font-family: var(--font-mono);
   color: var(--text-secondary);
   display: flex;
   flex-direction: column;
   gap: 4px;
   flex-shrink: 0;
-  padding-right: 6px;
+  padding-right: 12px;
   border-right: 1px solid var(--border-subtle);
   white-space: nowrap;
+  min-width: 140px;
 }
 .irmap-stats .rmap-st-b { color: #c41e3a; font-weight: 700; }
 .irmap-stats .rmap-st-p { color: #1e6fc4; font-weight: 700; }
@@ -1007,7 +1069,7 @@ input { font: inherit; color: inherit; }
   position: relative;
 }
 .irmap-circle {
-  width: 20px; height: 20px;
+  width: 22px; height: 22px;
   border-radius: 50%;
   background: transparent;
   box-sizing: border-box;
@@ -1061,7 +1123,7 @@ input { font: inherit; color: inherit; }
 }
 .viol-card .v-num {
   font-family: var(--font-display);
-  font-size: 22px;
+  font-size: 16px;
   font-weight: 500;
   color: var(--tie);
   line-height: 1;
@@ -1182,7 +1244,7 @@ input { font: inherit; color: inherit; }
   border: 1.5px solid var(--ink);
   background: var(--bg-paper);
   color: var(--text-primary);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
   white-space: nowrap;
   box-shadow: 1px 1px 0 var(--ink);
@@ -1217,7 +1279,7 @@ input { font: inherit; color: inherit; }
 .btn.sm { height: 26px; padding: 0 8px; font-size: 11px; }
 .btn.icon-only { width: 30px; padding: 0; }
 .btn.gen-big {
-  height: 40px; font-size: 14px; font-weight: 700;
+  height: 40px; font-size: 18px; font-weight: 700;
   font-family: var(--font-display);
   letter-spacing: 0.04em;
   box-shadow: 2px 2px 0 var(--ink);
@@ -1260,7 +1322,7 @@ input { font: inherit; color: inherit; }
   box-shadow: var(--shadow-card);
 }
 .table-head {
-  padding: 8px 14px;
+  padding: 4px 20px;
   background: var(--ink);
   color: var(--bg-cream);
   display: flex;
@@ -1293,10 +1355,10 @@ input { font: inherit; color: inherit; }
   width: auto;
   table-layout: fixed;
   border-collapse: collapse;
-  font-size: 16px;
+  font-size: 22px;
 }
 .round-table th:nth-child(1), .round-table td:nth-child(1) { width: 25px; }
-.round-table th:nth-child(2), .round-table td:nth-child(2) { width: 240px; }
+.round-table th:nth-child(2), .round-table td:nth-child(2) { width: 300px; }
 .round-table th:nth-child(3), .round-table td:nth-child(3) { width: 160px; }
 .round-table th:nth-child(4), .round-table td:nth-child(4) { width: 80px; }
 .round-table th:nth-child(5), .round-table td:nth-child(5) { width: 140px; }
@@ -1312,7 +1374,7 @@ input { font: inherit; color: inherit; }
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: var(--text-secondary);
-  padding: 3px 12px;
+  padding: 3px 24px;
   border-bottom: 1.5px solid var(--ink);
   font-family: var(--font-display);
   white-space: nowrap;
@@ -1438,12 +1500,12 @@ input { font: inherit; color: inherit; }
 /* Individual card label */
 .card-label {
   display: inline-flex; align-items: center; justify-content: center;
-  height: 35px; padding: 0 0px; min-width: 35px;
+  height: 38px; padding: 0 0px; min-width: 38px;
   border-radius: 3px;
   background: var(--bg-paper);
   border: 1.5px solid var(--ink);
   font-family: var(--font-mono);
-  font-size: 20px; font-weight: 700;
+  font-size: 20px; font-weight: 400;
   color: #6b5e45;
   white-space: nowrap;
 }
@@ -1457,8 +1519,8 @@ input { font: inherit; color: inherit; }
 .card-label.card-back-blue { background: rgba(28,58,140,0.13); border-color: rgba(28,58,140,0.4); }
 .card-label.traverse-card  { box-shadow: 0 0 0 2px var(--duizhuang); }
 .card-label.heart-marker-card { color: #7c3aed; font-weight: 700; }
-.card-label.selected-first  { background: rgba(180,50,35,0.15); border-color: var(--banker); color: var(--banker); }
-.card-label.selected-second { background: rgba(28,58,140,0.15); border-color: var(--player); color: var(--player); }
+.card-label.selected-first  { background: rgba(46,138,74,0.18); border: 3px solid #2e8a4a; color: #2e8a4a; }
+.card-label.selected-second { background: rgba(212,160,30,0.22); border: 3px solid #b8842a; color: #8a5e0e; }
 .card-label.highlighted-card-pos {
   background: var(--accent-bg) !important;
   border-color: var(--accent) !important;
@@ -1484,11 +1546,12 @@ td.swap-banker-six-result { color: var(--duizhuang) !important; font-weight: 900
 .round-table td.banker-six-point::after { content: '六'; position: absolute; top: 2px; right: 3px; font-size: 9px; color: var(--b6win); opacity: .7; }
 
 /* Row highlights */
-.round-table tbody tr.violation-row           { background: rgba(180,50,40,0.10) !important; border-bottom: 1px solid rgba(180,50,40,0.3); }
-.round-table tbody tr.violation-row:nth-child(even) { background: rgba(180,50,40,0.10) !important; }
-.round-table tbody tr.violation-row:hover     { background: rgba(180,50,40,0.18) !important; }
-.round-table tbody tr.card-color-violation-row { background: rgba(200,140,40,0.12) !important; border-bottom: 1px solid rgba(200,140,40,0.3); }
-.round-table tbody tr.card-color-violation-row:nth-child(even) { background: rgba(200,140,40,0.12) !important; }
+.round-table tbody tr.violation-row           { background: rgba(180,50,40,0.22) !important; border-bottom: 1px solid rgba(180,50,40,0.5); }
+.round-table tbody tr.violation-row:nth-child(even) { background: rgba(180,50,40,0.22) !important; }
+.round-table tbody tr.violation-row:hover     { background: rgba(180,50,40,0.32) !important; }
+.round-table tbody tr.card-color-violation-row { background: rgba(140,70,180,0.32) !important; border-bottom: 1px solid rgba(140,70,180,0.6); }
+.round-table tbody tr.card-color-violation-row:nth-child(even) { background: rgba(140,70,180,0.32) !important; }
+.round-table tbody tr.card-color-violation-row:hover { background: rgba(140,70,180,0.42) !important; }
 .round-table tbody tr.s-signal-round td.result-cell { border-bottom: 2px solid var(--banker); }
 .round-table tbody tr.traverse-round { background: rgba(125,58,165,0.06) !important; }
 .round-table tbody tr.traverse-round td:last-child { border-right: 2px solid var(--duizhuang); }
@@ -1843,13 +1906,6 @@ td.swap-banker-six-result { color: var(--duizhuang) !important; font-weight: 900
                             <div id="signalConfigDisplay" class="signal-config-display medal-preview">--</div>
                             <a id="clearSignalBtn" class="medal-clear" onclick="clearSignalConfig()" href="javascript:void(0)">✕ 清除</a>
                         </div>
-                        <div style="display:flex;flex-direction:column;gap:5px;margin-left:auto;flex-shrink:0;">
-                            <label class="toggle-btn" title="切換右上方違規統計區的顯示" style="cursor:pointer;height:26px;padding:0 8px 0 4px;font-size:11px;" data-on="true">
-                                <input type="checkbox" id="violationStatsToggle" checked style="display:none;">
-                                <span class="toggle-knob" style="width:18px;height:18px;"></span>
-                                <span>違規</span>
-                            </label>
-                        </div>
                     </div>
 
                     <!-- 花色 -->
@@ -1866,9 +1922,9 @@ td.swap-banker-six-result { color: var(--duizhuang) !important; font-weight: 900
                     <!-- RANKS -->
                     <div class="signal-pickrow">
                         <div class="lbl">點數 RANKS</div>
-                        <div class="rank-selector-row rank-row traverse-mode">
-                            <a class="rank-button rank-btn traverse-excluded" data-value="A"><span class="rank-value">A</span></a>
-                            <a class="rank-button rank-btn traverse-excluded" data-value="2"><span class="rank-value">2</span></a>
+                        <div class="rank-selector-row rank-row">
+                            <a class="rank-button rank-btn" data-value="A"><span class="rank-value">A</span></a>
+                            <a class="rank-button rank-btn" data-value="2"><span class="rank-value">2</span></a>
                             <a class="rank-button rank-btn" data-value="3"><span class="rank-value">3</span></a>
                             <a class="rank-button rank-btn" data-value="4"><span class="rank-value">4</span></a>
                             <a class="rank-button rank-btn" data-value="5"><span class="rank-value">5</span></a>
@@ -1930,13 +1986,12 @@ td.swap-banker-six-result { color: var(--duizhuang) !important; font-weight: 900
                             <label class="field-label recovery-input-label" for="swapBanker6Target">莊6局數</label>
                             <input type="number" id="swapBanker6Target" class="field-input recovery-input" min="0" value="2" placeholder="空白=不檢查">
                         </div>
-                        <div class="field recovery-input-item" style="justify-content:center;">
+                        <div class="field recovery-input-item" style="justify-content:center;align-items:center;grid-column:span 2;">
                             <label class="field-label recovery-input-label">&nbsp;</label>
-                            <label class="toggle-btn color-mode-slider" style="cursor:pointer;width:100%;" title="避開莊6點贏" data-on="false">
+                            <label class="toggle-btn" style="cursor:pointer;white-space:nowrap;" title="避開莊6點贏" data-on="false">
                                 <input type="checkbox" id="skipBanker6" style="display:none;">
-                                <span class="cms-opt">莊6</span>
-                                <span class="cms-thumb"></span>
-                                <span class="cms-opt">關閉</span>
+                                <span class="toggle-knob"></span>
+                                <span>莊6</span>
                             </label>
                         </div>
                     </div>
@@ -1971,13 +2026,28 @@ td.swap-banker-six-result { color: var(--duizhuang) !important; font-weight: 900
                         <label class="toggle-btn" style="cursor:pointer;">
                             <input type="checkbox" id="traverseFirstSensitive" checked style="display:none;">
                             <span class="toggle-knob"></span>
-                            <span>第一敏感</span>
+                            <span>首-敏</span>
                         </label>
                         <label class="toggle-btn" style="cursor:pointer;">
                             <input type="checkbox" id="traverseTieLast" checked style="display:none;">
                             <span class="toggle-knob"></span>
-                            <span>末局和局</span>
+                            <span>末-和</span>
                         </label>
+                    </div>
+                    <div class="rank-row" style="margin-top:8px;gap:3px;">
+                        <a class="trv-exclude-btn selected" data-value="A">A</a>
+                        <a class="trv-exclude-btn selected" data-value="2">2</a>
+                        <a class="trv-exclude-btn" data-value="3">3</a>
+                        <a class="trv-exclude-btn" data-value="4">4</a>
+                        <a class="trv-exclude-btn" data-value="5">5</a>
+                        <a class="trv-exclude-btn" data-value="6">6</a>
+                        <a class="trv-exclude-btn" data-value="7">7</a>
+                        <a class="trv-exclude-btn" data-value="8">8</a>
+                        <a class="trv-exclude-btn" data-value="9">9</a>
+                        <a class="trv-exclude-btn" data-value="10">10</a>
+                        <a class="trv-exclude-btn" data-value="J">J</a>
+                        <a class="trv-exclude-btn" data-value="Q">Q</a>
+                        <a class="trv-exclude-btn" data-value="K">K</a>
                     </div>
                 </div>
             </section>
@@ -2053,10 +2123,12 @@ td.swap-banker-six-result { color: var(--duizhuang) !important; font-weight: 900
                         <span class="unit">局</span>
                         <span class="stars" id="recoveryStars"></span>
                         <span class="rating-text" id="recoveryRatingText"></span>
+                        <label class="six-card-target-label" for="sixCardTarget" title="6張敏感局目標數量，空白=隨機">6張局</label>
+                        <input type="number" id="sixCardTarget" class="six-card-target-input" min="0" max="50" step="1" value="10" placeholder="隨機">
                     </div>
                     <div class="recovery-stats">
-                        <div><span class="k">最大消耗</span><span class="v"><span id="recoveryMaxCardsLeft">—</span> 張&nbsp;&nbsp;<span id="recoveryMaxCardsIdxLabel" style="font-size:0.85em;opacity:0.7;"></span></span></div>
-                        <div><span class="k">最大牌局</span><span class="v"><span id="recoveryMaxRoundsLeft">—</span> 局&nbsp;&nbsp;<span id="recoveryMaxRoundsIdxLabel" style="font-size:0.85em;opacity:0.7;"></span></span></div>
+                        <div><span class="k">最大消耗</span><span class="v"><span id="recoveryMaxCardsLeft">—</span> 張&nbsp;&nbsp;<span id="recoveryMaxCardsIdxLabel" style="font-size:15px;opacity:0.7;"></span></span></div>
+                        <div><span class="k">最大牌局</span><span class="v"><span id="recoveryMaxRoundsLeft">—</span> 局&nbsp;&nbsp;<span id="recoveryMaxRoundsIdxLabel" style="font-size:15px;opacity:0.7;"></span></span></div>
                         <div><span class="k">4張局</span><span class="v" id="recoveryFourCardRate">—</span></div>
                         <div><span class="k">5張局</span><span class="v" id="recoveryFiveCardRate">—</span></div>
                         <div><span class="k">6張局</span><span class="v" id="recoverySixCardRate">—</span></div>
@@ -2141,16 +2213,21 @@ td.swap-banker-six-result { color: var(--duizhuang) !important; font-weight: 900
                 <div class="action-group">
                     <span class="group-label">定位</span>
                     <span class="locator">
-                        <input id="cutPos" type="number" min="0" placeholder="3">
+                        <input id="cutPos" type="number" min="0">
                         <button id="btnCut">切牌</button>
                     </span>
                     <span class="locator">
-                        <input id="highlightCardPos" type="number" min="1" placeholder="66">
+                        <input id="highlightCardPos" type="number" min="1">
                         <button id="btnHighlightCard">定位</button>
                     </span>
                     <label class="swap-preview-toggle" style="margin-left:4px;">
                         <input type="checkbox" id="toggleSwapPreview">
                         <span>換牌預</span>
+                    </label>
+                    <label class="toggle-btn" title="切換右上方違規統計區的顯示" style="cursor:pointer;height:26px;padding:0 8px 0 4px;font-size:11px;margin-left:4px;" data-on="true">
+                        <input type="checkbox" id="violationStatsToggle" checked style="display:none;">
+                        <span class="toggle-knob" style="width:18px;height:18px;"></span>
+                        <span>違規</span>
                     </label>
                 </div>
             </section>
@@ -2243,24 +2320,25 @@ td.swap-banker-six-result { color: var(--duizhuang) !important; font-weight: 900
             button.addEventListener('click', (e) => {
                 e.preventDefault();
                 const value = button.dataset.value;
-                const excludeToggle = document.getElementById('traverseExcludeToggle');
-                const segCountToggle = document.getElementById('traverseSegCountToggle');
-                if (excludeToggle?.classList.contains('selected')) {
-                    button.classList.toggle('traverse-excluded');
-                    updateTraverseExcludeDisplay();
-                } else {
-                    const checkbox = document.querySelector('.rank-checkbox[value="' + value + '"]');
-                    if (checkbox) {
-                        checkbox.checked = !checkbox.checked;
-                        checkbox.dispatchEvent(new Event('change', { bubbles: true }));
-                    }
-                    if (typeof applySignalConfig === 'function') applySignalConfig();
-                    else if (typeof window.applySignalConfig === 'function') window.applySignalConfig();
+                button.classList.toggle('selected');
+                const checkbox = document.querySelector('.rank-checkbox[value="' + value + '"]');
+                if (checkbox) {
+                    checkbox.checked = button.classList.contains('selected');
+                    checkbox.dispatchEvent(new Event('change', { bubbles: true }));
                 }
+                if (typeof applySignalConfig === 'function') applySignalConfig();
+                else if (typeof window.applySignalConfig === 'function') window.applySignalConfig();
+            });
+        });
+        document.querySelectorAll('.trv-exclude-btn').forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                button.classList.toggle('selected');
+                updateTraverseExcludeDisplay();
             });
         });
         function updateTraverseExcludeDisplay() {
-            const excluded = Array.from(document.querySelectorAll('.rank-button.traverse-excluded')).map(btn => btn.dataset.value);
+            const excluded = Array.from(document.querySelectorAll('.trv-exclude-btn.selected')).map(btn => btn.dataset.value);
             const btn = document.getElementById('traverseExcludeToggle');
             const isOn = btn?.classList.contains('selected');
             if (btn) {
@@ -2277,9 +2355,6 @@ td.swap-banker-six-result { color: var(--duizhuang) !important; font-weight: 900
         }
         document.getElementById('traverseExcludeToggle')?.addEventListener('click', function(){
             this.classList.toggle('selected');
-            const row = document.querySelector('.rank-selector-row');
-            if (this.classList.contains('selected')) row?.classList.add('traverse-mode');
-            else row?.classList.remove('traverse-mode');
             updateTraverseExcludeDisplay();
         });
         updateTraverseExcludeDisplay();
@@ -2415,118 +2490,127 @@ td.swap-banker-six-result { color: var(--duizhuang) !important; font-weight: 900
                     if (typeof persistCardColorRangeRules === 'function') persistCardColorRangeRules(rangeRules.slice());
                 };
 
-                const buildSwatch = (initPat) => {
-                    const builder = document.createElement('div');
-                    builder.className = 'cbrange-builder';
-                    initPat.split('').forEach(c => {
-                        const sw = document.createElement('span');
-                        const initCls = c === 'R' ? 'cb-red' : c === 'B' ? 'cb-blue' : 'cb-blank';
-                        sw.className = 'cbrange-swatch ' + initCls;
-                        sw.addEventListener('click', () => {
-                            if (sw.classList.contains('cb-red')) {
-                                sw.classList.replace('cb-red', 'cb-blue');
-                            } else if (sw.classList.contains('cb-blue')) {
-                                sw.classList.replace('cb-blue', 'cb-blank');
-                            } else {
-                                sw.classList.replace('cb-blank', 'cb-red');
-                            }
-                        });
-                        builder.appendChild(sw);
+                const buildRangeItem = (rule) => {
+                    const item = document.createElement('div');
+                    item.className = 'cbrange-item';
+
+                    // top row
+                    const top = document.createElement('div');
+                    top.className = 'cbrange-top';
+
+                    const lbl1 = document.createElement('span');
+                    lbl1.className = 'cbrange-label';
+                    lbl1.textContent = '局';
+
+                    const fromInput = document.createElement('input');
+                    fromInput.type = 'number'; fromInput.className = 'cbrange-input'; fromInput.min = 1; fromInput.value = rule.from;
+                    fromInput.addEventListener('change', () => {
+                        rule.from = Math.max(1, parseInt(fromInput.value) || 1);
+                        fromInput.value = rule.from;
+                        if (rule.to < rule.from) { rule.to = rule.from; toInput.value = rule.to; }
+                        saveRules();
                     });
-                    return builder;
+
+                    const lbl2 = document.createElement('span');
+                    lbl2.className = 'cbrange-label'; lbl2.textContent = '~';
+
+                    const toInput = document.createElement('input');
+                    toInput.type = 'number'; toInput.className = 'cbrange-input'; toInput.min = 1; toInput.value = rule.to;
+                    toInput.addEventListener('change', () => {
+                        rule.to = Math.max(rule.from, parseInt(toInput.value) || rule.from);
+                        toInput.value = rule.to; saveRules();
+                    });
+
+                    const addPatBtn = document.createElement('button');
+                    addPatBtn.type = 'button'; addPatBtn.className = 'cbrange-add-pattern-btn'; addPatBtn.textContent = '+';
+                    addPatBtn.title = '新增允許 pattern';
+                    addPatBtn.addEventListener('click', () => {
+                        rule.patterns.push('BBBR');
+                        saveRules(); renderPatterns();
+                    });
+
+                    const rmBtn = document.createElement('span');
+                    rmBtn.className = 'cbrange-remove'; rmBtn.textContent = '×'; rmBtn.title = '移除段落';
+                    rmBtn.addEventListener('click', () => {
+                        const i = rangeRules.indexOf(rule);
+                        if (i >= 0) rangeRules.splice(i, 1);
+                        saveRules();
+                        item.remove();
+                    });
+
+                    top.append(lbl1, fromInput, lbl2, toInput, addPatBtn, rmBtn);
+
+                    // patterns area: each pattern is an editable swatch row
+                    const patternsDiv = document.createElement('div');
+                    patternsDiv.className = 'cbrange-chips';
+
+                    const buildPatternRow = (pidx) => {
+                        const row = document.createElement('span');
+                        row.className = 'cardback-chip';
+
+                        const builder = document.createElement('span');
+                        builder.className = 'cbrange-builder';
+                        const updateAt = (ci, ch) => {
+                            const arr = rule.patterns[pidx].split('');
+                            arr[ci] = ch;
+                            rule.patterns[pidx] = arr.join('');
+                            saveRules();
+                        };
+                        rule.patterns[pidx].split('').forEach((c, ci) => {
+                            const sw = document.createElement('span');
+                            const initCls = c === 'R' ? 'cb-red' : c === 'B' ? 'cb-blue' : 'cb-blank';
+                            sw.className = 'cbrange-swatch ' + initCls;
+                            sw.addEventListener('click', () => {
+                                if (sw.classList.contains('cb-red')) {
+                                    sw.classList.replace('cb-red', 'cb-blue'); updateAt(ci, 'B');
+                                } else if (sw.classList.contains('cb-blue')) {
+                                    sw.classList.replace('cb-blue', 'cb-blank'); updateAt(ci, '_');
+                                } else {
+                                    sw.classList.replace('cb-blank', 'cb-red'); updateAt(ci, 'R');
+                                }
+                            });
+                            builder.appendChild(sw);
+                        });
+
+                        const rmPat = document.createElement('span');
+                        rmPat.className = 'cb-chip-remove'; rmPat.textContent = '×'; rmPat.title = '移除此 pattern';
+                        rmPat.addEventListener('click', () => {
+                            rule.patterns.splice(pidx, 1);
+                            saveRules(); renderPatterns();
+                        });
+
+                        row.append(builder, rmPat);
+                        return row;
+                    };
+
+                    const renderPatterns = () => {
+                        patternsDiv.innerHTML = '';
+                        if (rule.patterns.length === 0) {
+                            const hint = document.createElement('span');
+                            hint.className = 'cardback-hint';
+                            hint.textContent = '空=隨機(不檢查)';
+                            patternsDiv.appendChild(hint);
+                            return;
+                        }
+                        rule.patterns.forEach((_, pidx) => patternsDiv.appendChild(buildPatternRow(pidx)));
+                    };
+
+                    renderPatterns();
+                    item.append(top, patternsDiv);
+                    return item;
                 };
-                const readSwatch = (builder) => Array.from(builder.querySelectorAll('.cbrange-swatch'))
-                    .map(s => s.classList.contains('cb-red') ? 'R' : s.classList.contains('cb-blue') ? 'B' : '_').join('');
 
                 const renderRangeRules = () => {
                     cbrangeList.innerHTML = '';
-                    rangeRules.forEach((rule, idx) => {
-                        const item = document.createElement('div');
-                        item.className = 'cbrange-item';
-
-                        // top row
-                        const top = document.createElement('div');
-                        top.className = 'cbrange-top';
-
-                        const lbl1 = document.createElement('span');
-                        lbl1.className = 'cbrange-label';
-                        lbl1.textContent = '局';
-
-                        const fromInput = document.createElement('input');
-                        fromInput.type = 'number'; fromInput.className = 'cbrange-input'; fromInput.min = 1; fromInput.value = rule.from;
-                        fromInput.addEventListener('change', () => {
-                            rule.from = Math.max(1, parseInt(fromInput.value) || 1);
-                            fromInput.value = rule.from;
-                            if (rule.to < rule.from) { rule.to = rule.from; toInput.value = rule.to; }
-                            saveRules();
-                        });
-
-                        const lbl2 = document.createElement('span');
-                        lbl2.className = 'cbrange-label'; lbl2.textContent = '~';
-
-                        const toInput = document.createElement('input');
-                        toInput.type = 'number'; toInput.className = 'cbrange-input'; toInput.min = 1; toInput.value = rule.to;
-                        toInput.addEventListener('change', () => {
-                            rule.to = Math.max(rule.from, parseInt(toInput.value) || rule.from);
-                            toInput.value = rule.to; saveRules();
-                        });
-
-                        const miniBuilder = buildSwatch('BBBR');
-
-                        const addPatBtn = document.createElement('button');
-                        addPatBtn.type = 'button'; addPatBtn.className = 'cbrange-add-pattern-btn'; addPatBtn.textContent = '+';
-                        addPatBtn.addEventListener('click', () => {
-                            const newPat = readSwatch(miniBuilder);
-                            if (!rule.patterns.includes(newPat)) { rule.patterns.push(newPat); saveRules(); renderChips(); }
-                        });
-
-                        const rmBtn = document.createElement('span');
-                        rmBtn.className = 'cbrange-remove'; rmBtn.textContent = '×'; rmBtn.title = '移除段落';
-                        rmBtn.addEventListener('click', () => { rangeRules.splice(idx, 1); saveRules(); renderRangeRules(); });
-
-                        top.append(lbl1, fromInput, lbl2, toInput, miniBuilder, addPatBtn, rmBtn);
-
-                        // chips
-                        const chipsDiv = document.createElement('div');
-                        chipsDiv.className = 'cbrange-chips';
-
-                        const renderChips = () => {
-                            chipsDiv.innerHTML = '';
-                            if (rule.patterns.length === 0) {
-                                const hint = document.createElement('span');
-                                hint.className = 'cardback-hint';
-                                hint.textContent = '空=隨機(不檢查)';
-                                chipsDiv.appendChild(hint);
-                                return;
-                            }
-                            rule.patterns.forEach((p, pidx) => {
-                                const chip = document.createElement('span');
-                                chip.className = 'cardback-chip';
-                                const miniRow = document.createElement('span');
-                                miniRow.className = 'cb-chip-mini-row';
-                                p.split('').forEach(c => {
-                                    const m = document.createElement('span');
-                                    m.className = 'cb-mini ' + (c === 'R' ? 'cb-red' : c === 'B' ? 'cb-blue' : 'cb-blank');
-                                    miniRow.appendChild(m);
-                                });
-                                const chipRm = document.createElement('span');
-                                chipRm.className = 'cb-chip-remove'; chipRm.textContent = '×';
-                                chipRm.addEventListener('click', () => { rule.patterns.splice(pidx, 1); saveRules(); renderChips(); });
-                                chip.append(miniRow, chipRm);
-                                chipsDiv.appendChild(chip);
-                            });
-                        };
-
-                        renderChips();
-                        item.append(top, chipsDiv);
-                        cbrangeList.appendChild(item);
-                    });
+                    rangeRules.forEach(rule => cbrangeList.appendChild(buildRangeItem(rule)));
                 };
 
                 cbrangeAddBtn.addEventListener('click', () => {
                     const lastTo = rangeRules.length > 0 ? rangeRules[rangeRules.length - 1].to : 0;
-                    rangeRules.push({ from: lastTo + 1, to: lastTo + 10, patterns: ['BBBR'] });
-                    saveRules(); renderRangeRules();
+                    const newRule = { from: lastTo + 1, to: lastTo + 10, patterns: ['BBBR'] };
+                    rangeRules.push(newRule);
+                    saveRules();
+                    cbrangeList.appendChild(buildRangeItem(newRule));
                 });
 
                 renderRangeRules();
@@ -2574,11 +2658,6 @@ td.swap-banker-six-result { color: var(--duizhuang) !important; font-weight: 900
                 const sync = () => btn?.setAttribute('data-on', cb.checked ? 'true' : 'false');
                 sync();
                 cb.addEventListener('change', sync);
-                btn?.addEventListener('click', (e) => {
-                    if (e.target.tagName === 'INPUT') return;
-                    cb.checked = !cb.checked;
-                    cb.dispatchEvent(new Event('change', { bubbles: true }));
-                });
             });
         });
     </script>
@@ -2610,7 +2689,7 @@ td.swap-banker-six-result { color: var(--duizhuang) !important; font-weight: 900
     <script>
         (function(){
             var STORAGE_KEY = 'at-settings';
-            var INPUT_IDS = ['avgRecoveryLimit','maxSideLimit','maxTieLimit','maxFourCardRate','max7PtReversal','swapBanker6Target','traverseSegLenMin','traverseSegLenMax'];
+            var INPUT_IDS = ['avgRecoveryLimit','maxSideLimit','maxTieLimit','maxFourCardRate','max7PtReversal','swapBanker6Target','traverseSegLenMin','traverseSegLenMax','sixCardTarget'];
             var CHECK_IDS = ['skipBanker6','traverseFirstSensitive','traverseTieLast'];
             try {
                 var saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');

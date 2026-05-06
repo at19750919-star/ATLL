@@ -1864,7 +1864,7 @@ function preflightCheckMaxSideLimit(rounds, options = {}) {
 
     const counts = countBankerPlayerTie(sourceRounds);
     const fourCardStats = countFourCardRate(sourceRounds);
-    const sideDiff = Math.abs(counts.banker - (counts.player + counts.tie));
+    const sideDiff = Math.abs(counts.banker - counts.player);
     const okSide = (!sideLimit) || (sideDiff <= sideLimit);
     const okTie = (tieLimit == null) || (counts.tie === tieLimit);
     const okFourCard = (!fourCardRateLimit) || (fourCardStats.rate <= fourCardRateLimit);
@@ -3357,11 +3357,11 @@ async function generateShoe() {
             const preflightLimits = preflightCheckMaxSideLimit(roundsToCheck, { alreadyAdjusted: true });
             if (preflightLimits.enabled) {
                 const c = preflightLimits.counts;
-                const sideDiff = Math.abs(c.banker - (c.player + c.tie));
+                const sideDiff = Math.abs(c.banker - c.player);
                 const sideText = preflightLimits.sideLimit ? `莊閒差距上限=${preflightLimits.sideLimit}` : '莊閒差距不檢查';
                 log(`🔍 檢測到：莊=${c.banker}、閒=${c.player}、和=${c.tie}、差距=${sideDiff}（${sideText}）`, 'info');
                 if (!preflightLimits.okSide && preflightLimits.sideLimit) {
-                    log(`🔍 ⚠️ 莊閒差距超標（莊=${c.banker} vs 閒+和=${c.player + c.tie}，差距=${sideDiff} > ${preflightLimits.sideLimit}），重新生成...`, 'warn');
+                    log(`🔍 ⚠️ 莊閒差距超標（莊=${c.banker} vs 閒=${c.player}，差距=${sideDiff} > ${preflightLimits.sideLimit}），重新生成...`, 'warn');
                     result = null;
                     continue;
                 }
@@ -3424,6 +3424,26 @@ async function generateShoe() {
         if (typeof window !== 'undefined' && window.__roundsModified) {
             refreshAnalysisAndRender({ mutate: false, skipVerify: true });
             window.__roundsModified = false;
+        }
+
+        // 【後處理 sideDiff 復查】verifyShoeRules 內的 S 局/連續莊閒修復
+        // 會對調前兩張 → 莊↔閒翻面，可能讓原本通過的莊閒差距超標
+        {
+            const sideLimitForRecheck = getMaxSideLimitSetting();
+            if (sideLimitForRecheck) {
+                const counts = countBankerPlayerTie(currentRounds);
+                const sideDiff = Math.abs(counts.banker - counts.player);
+                if (sideDiff > sideLimitForRecheck) {
+                    log(`🔁 後處理後莊閒差距超標（莊=${counts.banker} vs 閒=${counts.player}，差距=${sideDiff} > ${sideLimitForRecheck}），重新生成...`, 'warn');
+                    if (typeof window !== 'undefined') {
+                        if (!window.__regenerateCount) window.__regenerateCount = 0;
+                        window.__regenerateCount++;
+                        if (window.__regenerateTimerId) clearTimeout(window.__regenerateTimerId);
+                        window.__regenerateTimerId = setTimeout(() => { generateShoe(); }, 100);
+                    }
+                    return;
+                }
+            }
         }
 
         // 【自動卡色調整】

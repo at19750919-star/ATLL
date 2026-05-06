@@ -307,7 +307,7 @@
         const roundsBP = roundsToBacRoad(currentRounds);
         const big = buildBigRoad(roundsBP);
         const cellSize = 26;
-        const totalCols = Math.max(40, big.cols + 2);
+        const totalCols = Math.max(43, big.cols + 5);
 
         const stats = roundsBP.reduce((acc, r) => {
             if (r.r === 'B') acc.B++;

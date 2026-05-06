@@ -834,6 +834,11 @@ function syncUiFromSignalConfig() {
     document.querySelectorAll('.rank-checkbox').forEach(cb => {
         cb.checked = rankSet.has(cb.value);
     });
+    document.querySelectorAll('.rank-button').forEach(btn => {
+        const value = btn.dataset ? btn.dataset.value : null;
+        if (value && rankSet.has(value)) btn.classList.add('selected');
+        else btn.classList.remove('selected');
+    });
 
     if (typeof updateSignalCardCount === 'function') {
         updateSignalCardCount();
@@ -951,7 +956,7 @@ function pack_all_sensitive_and_segment(deck) {
         const isExcludeOn = document.getElementById('traverseExcludeToggle')?.classList.contains('selected');
         const excludePoints = new Set();
         if (isExcludeOn) {
-            document.querySelectorAll('.rank-button.traverse-excluded').forEach(btn => {
+            document.querySelectorAll('.trv-exclude-btn.selected').forEach(btn => {
                 const rank = btn.dataset.value;
                 if (['10', 'J', 'Q', 'K'].includes(rank)) excludePoints.add(0);
                 else if (rank === 'A') excludePoints.add(1);
@@ -1060,25 +1065,67 @@ function pack_all_sensitive_and_segment(deck) {
 
     // 上限模式：不再優先挑 B6，自然挑選時遇到就跳過超出上限的
 
-    // 先把所有敏感局加入 A 段（按原始順序，但 4 張局達上限就跳過）
-    for (const r of all_sensitive) {
-        if (typeof shouldSkipSensitiveRound === 'function' && shouldSkipSensitiveRound(r)) continue;
-        // 如果這局有用過的牌就跳過
-        if (r.cards.some(c => used_pos.has(c.pos))) continue;
-        // 4張局已達上限就跳過
-        if (r.cards.length === 4 && fourCardCount >= maxFourCardRounds) continue;
-        // 七點逆轉已達上限就跳過
-        if (max7PtLimit !== null && is7PtReversal(r) && sevenPtReversalCount >= max7PtLimit) continue;
-        // B6 達上限就不再加入新的 B6 局
-        if (swapB6Limit !== null && swapB6Count >= swapB6Limit && isSwapBankerSix(r)) continue;
+    // 共用：把一個 round 加入 a_rounds 並更新 used_pos / 計數（含所有上限檢查）
+    const tryAddSensitive = (r) => {
+        if (!r || !Array.isArray(r.cards) || r.cards.length === 0) return false;
+        if (typeof shouldSkipSensitiveRound === 'function' && shouldSkipSensitiveRound(r)) return false;
+        if (r.cards.some(c => used_pos.has(c.pos))) return false;
+        if (r.cards.length === 4 && fourCardCount >= maxFourCardRounds) return false;
+        if (max7PtLimit !== null && is7PtReversal(r) && sevenPtReversalCount >= max7PtLimit) return false;
+        if (swapB6Limit !== null && swapB6Count >= swapB6Limit && isSwapBankerSix(r)) return false;
         r.segment = 'A';
         a_rounds.push(r);
         r.cards.forEach(c => used_pos.add(c.pos));
         if (r.cards.length === 4) fourCardCount++;
         if (is7PtReversal(r)) sevenPtReversalCount++;
         if (isSwapBankerSix(r)) swapB6Count++;
+        return true;
+    };
+
+    // ===== 6 張敏感局優先挑選（目標由 UI 設定，空白=隨機不優先）=====
+    const sixCardTargetInput = document.getElementById('sixCardTarget');
+    const sixCardTargetRaw = sixCardTargetInput ? sixCardTargetInput.value.trim() : '';
+    const SIX_CARD_TARGET = sixCardTargetRaw === '' ? 0 : Math.max(0, parseInt(sixCardTargetRaw) || 0);
+    const MAX_SIX_CARD_RESHUFFLE = 100;
+    let sixCardPicked = 0;
+
+    if (SIX_CARD_TARGET > 0) {
+        // Phase 1：從自然掃描的 all_sensitive 挑 6 張的
+        for (const r of all_sensitive) {
+            if (sixCardPicked >= SIX_CARD_TARGET) break;
+            if (r.cards.length !== 6) continue;
+            if (tryAddSensitive(r)) sixCardPicked++;
+        }
+        log(`🔍 ✅ 6張敏感局 Phase1（自然掃描）：${sixCardPicked}/${SIX_CARD_TARGET} 局`, 'info');
+
+        // Phase 2：不夠 → 重新洗牌補 6 張敏感局
+        if (sixCardPicked < SIX_CARD_TARGET) {
+            let reshuffleAttempts = 0;
+            let phase2Added = 0;
+            while (sixCardPicked < SIX_CARD_TARGET && reshuffleAttempts < MAX_SIX_CARD_RESHUFFLE) {
+                reshuffleAttempts++;
+                const remaining = deck.filter(c => !used_pos.has(c.pos));
+                if (remaining.length < 6) break;
+                const cands = multi_pass_candidates_from_cards_simple(remaining);
+                if (!Array.isArray(cands)) continue;
+                const sixCand = cands.find(r => r && Array.isArray(r.cards) && r.cards.length === 6);
+                if (!sixCand) continue;
+                if (tryAddSensitive(sixCand)) {
+                    sixCardPicked++;
+                    phase2Added++;
+                }
+            }
+            const phase2Prefix = sixCardPicked >= SIX_CARD_TARGET ? '🔍 ✅' : '🔍 ⚠️';
+            log(`${phase2Prefix} 6張敏感局 Phase2（重洗 ${reshuffleAttempts} 次）：補 ${phase2Added} 局，累計 ${sixCardPicked}/${SIX_CARD_TARGET}`,
+                sixCardPicked >= SIX_CARD_TARGET ? 'success' : 'warn');
+        }
     }
-    log(`🔍 自然敏感局加入完成：A段 ${a_rounds.length} 局(4張=${fourCardCount})，已用牌 ${used_pos.size} 張`, 'info');
+
+    // 把所有敏感局加入 A 段（按原始順序，已塞過的會被 used_pos 自動跳過；4/5/6 張都收）
+    for (const r of all_sensitive) {
+        tryAddSensitive(r);
+    }
+    log(`🔍 自然敏感局加入完成：A段 ${a_rounds.length} 局(4張=${fourCardCount}${SIX_CARD_TARGET > 0 ? `, 6張優先=${sixCardPicked}` : ''})，已用牌 ${used_pos.size} 張`, 'info');
     
     // 持續多重洗牌挑選敏感局
     const MAX_MULTI_PASS_ATTEMPTS = 200;
@@ -1999,9 +2046,19 @@ function updateRecoveryDisplay(result) {
     const fourEl = document.getElementById('recoveryFourCardRate');
     const fiveEl = document.getElementById('recoveryFiveCardRate');
     const sixEl = document.getElementById('recoverySixCardRate');
-    if (fourEl) fourEl.textContent = `${roundStats.fourCardCount} 局 (${fourPct}%)`;
-    if (fiveEl) fiveEl.textContent = `${roundStats.fiveCardCount} 局 (${fivePct}%)`;
-    if (sixEl) sixEl.textContent = `${roundStats.sixCardCount} 局 (${sixPct}%)`;
+    const applyDevColor = (el, actualPct, expectedPct) => {
+        if (!el) return;
+        el.classList.remove('dev-warn', 'dev-danger');
+        const diff = Math.abs(parseFloat(actualPct) - expectedPct);
+        if (diff >= 5) el.classList.add('dev-danger');
+        else if (diff >= 3) el.classList.add('dev-warn');
+    };
+    if (fourEl) fourEl.innerHTML = `<span class="big-num">${roundStats.fourCardCount}</span> 局 <span class="sub-num">(${fourPct}%)</span>`;
+    if (fiveEl) fiveEl.innerHTML = `<span class="big-num">${roundStats.fiveCardCount}</span> 局 <span class="sub-num">(${fivePct}%)</span>`;
+    if (sixEl)  sixEl.innerHTML  = `<span class="big-num">${roundStats.sixCardCount}</span> 局 <span class="sub-num">(${sixPct}%)</span>`;
+    applyDevColor(fourEl, fourPct, 37.89);
+    applyDevColor(fiveEl, fivePct, 30.34);
+    applyDevColor(sixEl, sixPct, 31.77);
 
     // 對調莊6統計
     const rounds = (typeof currentRounds !== 'undefined') ? currentRounds : [];
