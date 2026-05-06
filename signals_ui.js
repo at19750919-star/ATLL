@@ -1729,6 +1729,14 @@ if (typeof _originalRefreshAnalysisAndRender === 'function') {
         if (recoveryBtn && currentRounds && currentRounds.length > 0) {
             recoveryBtn.style.display = 'inline-block';
         }
+        // 更新內嵌路單（編輯模式時不覆蓋）
+        if (typeof window.renderInlineRoadmap === 'function') {
+            const _ctr = document.getElementById('inlineRoadmapContainer');
+            if (!_ctr || _ctr.dataset.mode !== 'edit') {
+                window.renderInlineRoadmap();
+                if (_ctr) _ctr.dataset.mode = 'road';
+            }
+        }
         return result;
     };
 }
@@ -1952,6 +1960,16 @@ function updateRecoveryDisplay(result) {
     const maxRoundsLeftEl = document.getElementById('recoveryMaxRoundsLeft');
     if (maxCardsLeftEl) maxCardsLeftEl.textContent = ` ${result.maxCards} `;
     if (maxRoundsLeftEl) maxRoundsLeftEl.textContent = ` ${result.maxRounds} `;
+    const maxCardsIdxLabelEl = document.getElementById('recoveryMaxCardsIdxLabel');
+    if (maxCardsIdxLabelEl) {
+        const pos = typeof result.maxCardIdx === 'number' && result.maxCardIdx >= 0 ? result.maxCardIdx + 1 : null;
+        maxCardsIdxLabelEl.textContent = pos ? `第${pos}張` : '';
+    }
+    const maxRoundsIdxLabelEl = document.getElementById('recoveryMaxRoundsIdxLabel');
+    if (maxRoundsIdxLabelEl) {
+        const pos = typeof result.maxRoundsIdx === 'number' && result.maxRoundsIdx >= 0 ? result.maxRoundsIdx + 1 : null;
+        maxRoundsIdxLabelEl.textContent = pos ? `第${pos}張` : '';
+    }
     document.getElementById('recoveryImmediateDetail').textContent = `${result.immediateRecovery} 個 (${result.immediatePercent}%)`;
     const maxIdxEl = document.getElementById('recoveryMaxIndexDetail');
     if (maxIdxEl) {
@@ -3360,16 +3378,45 @@ function initNewDialogButtons() {
         btnSequence.addEventListener('click', showSequenceInputDialog);
     }
     
-    // 路單按鈕
+    // 路單 / 路單編輯 toggle（共用 inlineRoadmapContainer）
     const btnRoadMap = document.getElementById('btnRoadMap');
-    if (btnRoadMap && typeof showRoadMapDialog === 'function') {
-        btnRoadMap.addEventListener('click', showRoadMapDialog);
-    }
-    
-    // 路單編輯按鈕
     const btnRoadInput = document.getElementById('btnRoadInput');
-    if (btnRoadInput && typeof showRoadInputDialog === 'function') {
-        btnRoadInput.addEventListener('click', showRoadInputDialog);
+    const _roadCtr = document.getElementById('inlineRoadmapContainer');
+
+    function _setRoadActiveBtn(which) {
+        if (btnRoadMap) btnRoadMap.classList.toggle('btn-road-active', which === 'road');
+        if (btnRoadInput) btnRoadInput.classList.toggle('btn-road-active', which === 'edit');
+    }
+
+    if (btnRoadMap) {
+        btnRoadMap.addEventListener('click', () => {
+            if (_roadCtr && _roadCtr.dataset.mode === 'road') {
+                _roadCtr.innerHTML = '';
+                delete _roadCtr.dataset.mode;
+                _setRoadActiveBtn(null);
+            } else {
+                if (typeof window.renderInlineRoadmap === 'function') window.renderInlineRoadmap();
+                if (_roadCtr) _roadCtr.dataset.mode = 'road';
+                _setRoadActiveBtn('road');
+            }
+        });
+    }
+
+    if (btnRoadInput) {
+        btnRoadInput.addEventListener('click', () => {
+            if (_roadCtr && _roadCtr.dataset.mode === 'edit') {
+                _roadCtr.innerHTML = '';
+                delete _roadCtr.dataset.mode;
+                _setRoadActiveBtn(null);
+            } else {
+                if (typeof window.renderInlineRoadEdit === 'function') {
+                    window.renderInlineRoadEdit(_roadCtr);
+                } else if (typeof window.showRoadInputDialog === 'function') {
+                    window.showRoadInputDialog();
+                }
+                _setRoadActiveBtn('edit');
+            }
+        });
     }
 }
 

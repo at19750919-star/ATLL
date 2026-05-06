@@ -5,21 +5,14 @@
     // 把 currentRounds 轉成 baccarat-roadmap 用的 {r, bp, pp, l6} 格式
     function roundsToBacRoad(rounds) {
         if (!Array.isArray(rounds)) return [];
-        return rounds.map((rd) => {
+        const b6Set = (typeof bankerSixIndexes !== 'undefined' && bankerSixIndexes instanceof Set)
+            ? bankerSixIndexes : new Set();
+        return rounds.map((rd, idx) => {
             let r = 'B';
             if (rd.result === '莊') r = 'B';
             else if (rd.result === '閒') r = 'P';
             else if (rd.result === '和') r = 'T';
-            // 莊6 點贏 → 標 l6(幸運6)
-            let l6 = false;
-            if (r === 'B' && Array.isArray(rd.cards) && rd.cards.length >= 4) {
-                try {
-                    const sim = (typeof simulateBaccaratResult === 'function')
-                        ? simulateBaccaratResult(rd.cards)
-                        : null;
-                    if (sim && sim.result === '莊' && sim.bankerTotal === 6) l6 = true;
-                } catch (e) { /* ignore */ }
-            }
+            const l6 = r === 'B' && b6Set.has(idx);
             return { r, bp: false, pp: false, l6 };
         });
     }
@@ -303,6 +296,92 @@
         });
     }
 
+    function renderInlineRoadmap() {
+        const container = document.getElementById('inlineRoadmapContainer');
+        if (!container) return;
+        if (typeof currentRounds === 'undefined' || !Array.isArray(currentRounds) || currentRounds.length === 0) {
+            container.innerHTML = '';
+            return;
+        }
+
+        const roundsBP = roundsToBacRoad(currentRounds);
+        const big = buildBigRoad(roundsBP);
+        const cellSize = 26;
+        const totalCols = Math.max(40, big.cols + 2);
+
+        const stats = roundsBP.reduce((acc, r) => {
+            if (r.r === 'B') acc.B++;
+            else if (r.r === 'P') acc.P++;
+            else acc.T++;
+            if (r.l6) acc.L6++;
+            return acc;
+        }, { B: 0, P: 0, T: 0, L6: 0 });
+
+        container.innerHTML = '';
+
+        const row = document.createElement('div');
+        row.className = 'irmap-row';
+
+        const statsPanel = document.createElement('div');
+        statsPanel.className = 'irmap-stats';
+        statsPanel.innerHTML = `
+            <div>共 ${roundsBP.length} 局</div>
+            <div class="rmap-st-b">莊 ${stats.B}</div>
+            <div class="rmap-st-p">閒 ${stats.P}</div>
+            <div class="rmap-st-t">和 ${stats.T}</div>
+            <div class="rmap-st-l6">幸運6 ${stats.L6}</div>
+        `;
+        row.appendChild(statsPanel);
+
+        const boardWrap = document.createElement('div');
+        boardWrap.className = 'irmap-board-wrap';
+        const board = document.createElement('div');
+        board.className = 'irmap-board';
+        board.style.cssText = `grid-template-rows:repeat(6,${cellSize}px);grid-template-columns:repeat(${totalCols},${cellSize}px);`;
+        boardWrap.appendChild(board);
+        row.appendChild(boardWrap);
+        container.appendChild(row);
+
+        for (let row = 0; row < 6; row++) {
+            for (let col = 0; col < totalCols; col++) {
+                const c = document.createElement('div');
+                c.className = 'irmap-grid-cell';
+                c.style.gridRow = row + 1;
+                c.style.gridColumn = col + 1;
+                board.appendChild(c);
+            }
+        }
+        for (let row = 0; row < big.rows; row++) {
+            for (const colKey in big.grid[row]) {
+                const cell = big.grid[row][colKey];
+                if (!cell) continue;
+                const wrap = document.createElement('div');
+                wrap.className = 'irmap-cell';
+                wrap.style.gridRow = row + 1;
+                wrap.style.gridColumn = (Number(colKey) + 1);
+
+                const circle = document.createElement('div');
+                circle.className = 'irmap-circle ' + (cell.r === 'B' ? 'banker' : 'player');
+                if (cell.l6) circle.classList.add('l6');
+                wrap.appendChild(circle);
+
+                if (cell.tie > 0) {
+                    const tieLine = document.createElement('div');
+                    tieLine.className = 'irmap-tie-line';
+                    wrap.appendChild(tieLine);
+                    if (cell.tie > 1) {
+                        const cnt = document.createElement('div');
+                        cnt.className = 'irmap-tie-count';
+                        cnt.textContent = cell.tie;
+                        wrap.appendChild(cnt);
+                    }
+                }
+                board.appendChild(wrap);
+            }
+        }
+    }
+
     // 公開
     window.showRoadMapDialog = showRoadMapDialog;
+    window.renderInlineRoadmap = renderInlineRoadmap;
 })();

@@ -251,7 +251,7 @@ function loadCardColorMixedMode() {
     }
 }
 
-let CARD_COLOR_MIXED_MODE = loadCardColorMixedMode();
+const CARD_COLOR_MIXED_MODE = true;
 
 function persistCardColorMixedMode(enabled) {
     CARD_COLOR_MIXED_MODE = !!enabled;
@@ -269,7 +269,14 @@ function persistCardColorMixedMode(enabled) {
 }
 
 function isValidCardColorPattern(p) {
-    return typeof p === 'string' && /^[RB]{4}$/.test(p);
+    return typeof p === 'string' && /^[RB_]{4}$/.test(p);
+}
+function cardColorPatternMatches(pattern, colorStr) {
+    if (!pattern || !colorStr || pattern.length !== 4 || colorStr.length !== 4) return false;
+    for (let i = 0; i < 4; i++) {
+        if (pattern[i] !== '_' && pattern[i] !== colorStr[i]) return false;
+    }
+    return true;
 }
 
 function loadCardColorPatternsSelected() {
@@ -308,6 +315,64 @@ function persistCardColorPatternsSelected(list) {
     return CARD_COLOR_PATTERNS_SELECTED.slice();
 }
 
+const CARD_COLOR_RANGE_RULES_STORAGE_KEY = 'card_color_range_rules';
+
+function _normalizeRangeRule(r) {
+    if (!r.patterns && r.pattern) return { from: r.from, to: r.to, patterns: [r.pattern] };
+    return r;
+}
+function _isValidRangeRule(r) {
+    return Number.isInteger(r.from) && Number.isInteger(r.to) &&
+        r.from >= 1 && r.to >= r.from &&
+        Array.isArray(r.patterns) &&
+        r.patterns.every(isValidCardColorPattern); // 空陣列 = 隨機(不檢查)
+}
+
+function loadCardColorRangeRules() {
+    if (typeof window === 'undefined' || !window.localStorage) return [];
+    try {
+        const v = window.localStorage.getItem(CARD_COLOR_RANGE_RULES_STORAGE_KEY);
+        if (!v) return [];
+        const parsed = JSON.parse(v);
+        if (!Array.isArray(parsed)) return [];
+        return parsed.map(_normalizeRangeRule).filter(_isValidRangeRule);
+    } catch (e) { return []; }
+}
+
+let CARD_COLOR_RANGE_RULES = loadCardColorRangeRules();
+
+function persistCardColorRangeRules(rules) {
+    const sanitized = Array.isArray(rules)
+        ? rules.map(_normalizeRangeRule).filter(_isValidRangeRule)
+        : [];
+    CARD_COLOR_RANGE_RULES = sanitized;
+    if (typeof window !== 'undefined') {
+        window.__cardColorRangeRules = CARD_COLOR_RANGE_RULES.slice();
+        try {
+            if (window.localStorage) {
+                window.localStorage.setItem(CARD_COLOR_RANGE_RULES_STORAGE_KEY, JSON.stringify(CARD_COLOR_RANGE_RULES));
+            }
+        } catch (e) {}
+    }
+    return CARD_COLOR_RANGE_RULES.slice();
+}
+
+function getCardColorPatternsForRound(ridx) {
+    const roundNum = ridx + 1;
+    const rule = CARD_COLOR_RANGE_RULES.find(r => roundNum >= r.from && roundNum <= r.to);
+    if (!rule) return getCardColorPatterns();
+    if (rule.patterns.length === 0) return getCardColorPatterns(); // 隨機：同全域預設
+    return rule.patterns.map(s => s.split(''));
+}
+
+function getValidCardColorStringsForRound(ridx) {
+    const roundNum = ridx + 1;
+    const rule = CARD_COLOR_RANGE_RULES.find(r => roundNum >= r.from && roundNum <= r.to);
+    if (!rule) return getValidCardColorStrings();
+    if (rule.patterns.length === 0) return null; // null = 跳過驗證
+    return rule.patterns.slice();
+}
+
 function getCardColorPatterns() {
     if (CARD_COLOR_PATTERNS_SELECTED && CARD_COLOR_PATTERNS_SELECTED.length > 0) {
         return CARD_COLOR_PATTERNS_SELECTED.map(s => s.split(''));
@@ -319,11 +384,11 @@ function getCardColorPatterns() {
 
 function getValidCardColorStrings() {
     if (CARD_COLOR_PATTERNS_SELECTED && CARD_COLOR_PATTERNS_SELECTED.length > 0) {
-        return new Set(CARD_COLOR_PATTERNS_SELECTED);
+        return CARD_COLOR_PATTERNS_SELECTED.slice();
     }
     return CARD_COLOR_MIXED_MODE
-        ? new Set(['BBBR', 'RRRB', 'BBRR', 'RRBB'])
-        : new Set(['BBBR', 'RRRB']);
+        ? ['BBBR', 'RRRB', 'BBRR', 'RRBB']
+        : ['BBBR', 'RRRB'];
 }
 const SUIT_SYMBOL_TO_LETTER_MAP = { '♠': 'S', '♥': 'H', '♦': 'D', '♣': 'C', 'S': 'S', 'H': 'H', 'D': 'D', 'C': 'C' };
 const SUIT_LETTER_TO_SYMBOL_MAP = { S: '♠', H: '♥', D: '♦', C: '♣' };
@@ -3705,9 +3770,12 @@ function runAutoColorSwap_Signal(rounds) {
         if (round.isTraverse) return false;
         // B 段每段末 2 局跳過卡色調整
         if (round.skipColorAdjust) return false;
+        // 段落設定為隨機（空 patterns）→ 不強制卡色，保留初始顏色
+        const _rangeRule = CARD_COLOR_RANGE_RULES.find(r => (ridx + 1) >= r.from && (ridx + 1) <= r.to);
+        if (_rangeRule && _rangeRule.patterns.length === 0) return false;
         if (!force && (lockedFullRounds.has(ridx) || semiLockedRounds.has(ridx))) return false;
 
-        const patterns = getCardColorPatterns();
+        const patterns = getCardColorPatternsForRound(ridx);
         let sortedPatterns;
         if (CARD_COLOR_MIXED_MODE) {
             // 混和模式：隨機選 pattern，避免集中在 BBBR/RRRB
@@ -3772,6 +3840,7 @@ function solvePattern(ridx, pattern, lockedFullRounds, semiLockedRounds, options
     const sandbox_cards = round_to_solve.cards.map(c => c.clone()); // 建立沙盒
 
     for (let p = 0; p < n; p++) {
+        if (pattern[p] === '_') continue; // 空白位置：不限顏色，跳過
         if (sandbox_cards[p].back_color === pattern[p]) continue;
 
         const needColor = pattern[p];
@@ -5272,15 +5341,16 @@ function collectCardColorViolationRounds(rounds) {
         return violationRounds;
     }
 
-    const validSet = getValidCardColorStrings();
     for (let i = 0; i < rounds.length; i++) {
         const round = rounds[i];
         if (!round || !Array.isArray(round.cards) || round.cards.length < 4) continue;
         // 穿越段、B 段末 2 局不檢查卡色違規
         if (round.isTraverse) continue;
         if (round.skipColorAdjust) continue;
+        const validPatterns = getValidCardColorStringsForRound(i);
+        if (validPatterns === null) continue; // 段落設定為隨機，跳過驗證
         const colors = round.cards.slice(0, 4).map(c => (c && c.back_color) ? c.back_color : '?').join('');
-        if (!validSet.has(colors)) {
+        if (!validPatterns.some(pat => cardColorPatternMatches(pat, colors))) {
             violationRounds.push(i + 1);
         }
     }
@@ -5658,6 +5728,7 @@ function analyzeShoeRecovery(rounds) {
     let maxCards = 0;
     let maxRounds = 0;
     let maxCardIdx = -1;
+    let maxRoundsIdx = -1;
     let immediateRecovery = 0;
 
     // 新增：記錄每個切牌點的回復局數
@@ -5714,6 +5785,7 @@ function analyzeShoeRecovery(rounds) {
                 }
                 if (roundsUsed > maxRounds) {
                     maxRounds = roundsUsed;
+                    maxRoundsIdx = cutPoint;
                 }
 
                 // 記錄分佈
@@ -5767,6 +5839,7 @@ function analyzeShoeRecovery(rounds) {
         maxCards,
         maxRounds,
         maxCardIdx,
+        maxRoundsIdx,
         immediateRecovery,
         immediatePercent,
         distribution,

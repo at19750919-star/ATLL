@@ -467,5 +467,268 @@
         render();
     }
 
+    function renderInlineRoadEdit(container) {
+        if (!container) return;
+
+        if (!document.getElementById('road-input-inline-styles')) {
+            const style = document.createElement('style');
+            style.id = 'road-input-inline-styles';
+            style.textContent = `
+                .rid-btn {
+                    padding: 6px 14px; border: 2px solid #999; background: #fff;
+                    font-size: 14px; font-weight: bold; cursor: pointer;
+                    border-radius: 4px; font-family: inherit; color: #333; min-width: 48px;
+                }
+                .rid-btn:hover { background: #f0f0f0; }
+                .rid-btn:active { transform: translateY(1px); }
+                .rid-btn-b { background: #c41e3a; color: #fff; border-color: #8a1226; }
+                .rid-btn-b:hover { background: #a01828; }
+                .rid-btn-p { background: #1e7fc4; color: #fff; border-color: #0e5a9a; }
+                .rid-btn-p:hover { background: #185f96; }
+                .rid-btn-t { background: #2e8b57; color: #fff; border-color: #1d5d3a; }
+                .rid-btn-t:hover { background: #246a43; }
+                .rid-btn-6 { background: #ffc107; color: #6b3a00; border-color: #d4a000; }
+                .rid-btn-6:hover { background: #e6a800; }
+                .rid-btn-undo, .rid-btn-clear { background: #777; color: #fff; border-color: #555; }
+                .rid-btn-undo:hover, .rid-btn-clear:hover { background: #555; }
+                .rid-btn-apply { background: #2e8b57; color: #fff; border-color: #1d5d3a; min-width: 90px; }
+                .rid-btn-apply:hover { background: #246a43; }
+                .rid-btn-apply:disabled { background: #aaa; color: #fff; cursor: not-allowed; border-color: #888; }
+                .rid-budget { padding: 3px 8px; border-radius: 4px; font-size: 12px; background: #d8f5d8; color: #1d5d3a; }
+                .rid-budget.warn { background: #ffe8b3; color: #8a5a00; }
+                .rid-budget.over { background: #ffcccc; color: #8a0000; }
+                .ire-toolbar { display: flex; gap: 6px; align-items: center; padding: 8px 0; border-bottom: 1px solid #c8a978; margin-bottom: 6px; flex-wrap: wrap; }
+                .ire-stats { display: flex; gap: 12px; align-items: center; font-size: 12px; padding: 4px 0; border-bottom: 1px solid #e8d9b8; margin-bottom: 6px; flex-wrap: wrap; }
+                .ire-stats b { color: #c41e3a; font-size: 13px; }
+                .ire-board-wrap { overflow-x: auto; margin-bottom: 8px; }
+                .ire-board {
+                    display: grid;
+                    grid-template-rows: repeat(6, 26px);
+                    grid-template-columns: repeat(var(--cols, 40), 26px);
+                    gap: 0; background: #fffbe9; border: 1px solid #c8a978; width: fit-content;
+                }
+                .ire-board > .ire-grid-cell { border-right: 1px solid #e8d9b8; border-bottom: 1px solid #e8d9b8; box-sizing: border-box; }
+                .ire-board > .ire-cell {
+                    width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
+                    box-sizing: border-box; z-index: 2; position: relative;
+                }
+                .ire-circle { width: 20px; height: 20px; border-radius: 50%; background: transparent; box-sizing: border-box; position: relative; }
+                .ire-circle.banker { border: 2.5px solid #c41e3a; }
+                .ire-circle.player { border: 2.5px solid #1e6fc4; }
+                .ire-circle.l6 { background: radial-gradient(circle, #ffd54f 60%, transparent 65%); }
+                .ire-circle.l6::after {
+                    content: '6'; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+                    color: #6b3a00; font-size: 10px; font-weight: bold;
+                }
+                .ire-tie-line { position: absolute; width: 26px; height: 26px; pointer-events: none; }
+                .ire-tie-line::before {
+                    content: ''; position: absolute; top: 50%; left: 0; width: 100%; height: 2px;
+                    background: #2e8b57; transform: rotate(-45deg); transform-origin: center;
+                }
+                .ire-tie-count { position: absolute; top: 1px; right: 2px; font-size: 8px; color: #2e8b57; font-weight: bold; }
+                .ire-footer { display: flex; gap: 10px; align-items: center; padding-top: 8px; border-top: 1px solid #e8d9b8; flex-wrap: wrap; }
+                .ire-footer .ire-hint { font-size: 11px; color: #888; margin-right: auto; }
+            `;
+            document.head.appendChild(style);
+        }
+
+        container.dataset.mode = 'edit';
+        container.innerHTML = `
+            <div class="ire-toolbar">
+                <button class="rid-btn rid-btn-b" data-act="B">莊</button>
+                <button class="rid-btn rid-btn-p" data-act="P">閒</button>
+                <button class="rid-btn rid-btn-t" data-act="T">和</button>
+                <button class="rid-btn rid-btn-6" data-act="B6">6</button>
+                <span style="display:inline-block;width:8px"></span>
+                <button class="rid-btn rid-btn-undo" data-act="undo">退</button>
+                <button class="rid-btn rid-btn-clear" data-act="clear">清</button>
+            </div>
+            <div class="ire-stats">
+                <span>總: <b id="ireTotal">0</b></span>
+                <span>莊: <b id="ireCntB">0</b></span>
+                <span>閒: <b id="ireCntP">0</b></span>
+                <span>和: <b id="ireCntT">0</b></span>
+                <span>莊6: <b id="ireCntL6">0</b></span>
+                <span id="ireBudget" class="rid-budget" style="margin-left:auto"></span>
+            </div>
+            <div class="ire-board-wrap">
+                <div class="ire-board" id="ireBoardInline"></div>
+            </div>
+            <div class="ire-footer">
+                <span class="ire-hint">快捷鍵: 1=莊 2=閒 3=和 6=莊6 Backspace=退</span>
+                <button class="rid-btn rid-btn-apply" id="ireApplyBtn">套用生成</button>
+            </div>
+        `;
+
+        const items = savedItems.slice();
+        const elTotal = container.querySelector('#ireTotal');
+        const elB = container.querySelector('#ireCntB');
+        const elP = container.querySelector('#ireCntP');
+        const elT = container.querySelector('#ireCntT');
+        const elL6 = container.querySelector('#ireCntL6');
+        const elBudget = container.querySelector('#ireBudget');
+        const applyBtn = container.querySelector('#ireApplyBtn');
+        const board = container.querySelector('#ireBoardInline');
+
+        function render() {
+            const stats = items.reduce((acc, it) => {
+                if (it === 'B') acc.B++;
+                else if (it === 'P') acc.P++;
+                else if (it === 'T') acc.T++;
+                else if (it === 'B6') { acc.B++; acc.L6++; }
+                return acc;
+            }, { B: 0, P: 0, T: 0, L6: 0 });
+            elTotal.textContent = items.length;
+            elB.textContent = stats.B;
+            elP.textContent = stats.P;
+            elT.textContent = stats.T;
+            elL6.textContent = stats.L6;
+
+            const total = items.length;
+            const remaining = SOFT_MAX_ROUNDS - total;
+            elBudget.classList.remove('warn', 'over');
+            if (total < MIN_RECOMMENDED) {
+                elBudget.textContent = `建議 ${MIN_RECOMMENDED}~${SOFT_MAX_ROUNDS} 局(差 ${MIN_RECOMMENDED - total} 局)`;
+            } else if (total <= SOFT_MAX_ROUNDS) {
+                elBudget.textContent = `剩餘額度約 ${remaining} 局`;
+            } else if (total <= HARD_MAX_ROUNDS) {
+                elBudget.textContent = `超出建議上限(${total}>${SOFT_MAX_ROUNDS})`;
+                elBudget.classList.add('warn');
+            } else {
+                elBudget.textContent = `超出硬上限(${total}>${HARD_MAX_ROUNDS})`;
+                elBudget.classList.add('over');
+            }
+            applyBtn.disabled = (total === 0 || total > HARD_MAX_ROUNDS);
+
+            const big = buildBigRoadFrom(items);
+            const totalCols = Math.max(40, big.cols + 2);
+            board.style.setProperty('--cols', totalCols);
+            board.innerHTML = '';
+            for (let row = 0; row < 6; row++) {
+                for (let col = 0; col < totalCols; col++) {
+                    const c = document.createElement('div');
+                    c.className = 'ire-grid-cell';
+                    c.style.gridRow = row + 1;
+                    c.style.gridColumn = col + 1;
+                    board.appendChild(c);
+                }
+            }
+            for (let row = 0; row < big.rows; row++) {
+                for (const colKey in big.grid[row]) {
+                    const cell = big.grid[row][colKey];
+                    if (!cell) continue;
+                    const wrap = document.createElement('div');
+                    wrap.className = 'ire-cell';
+                    wrap.style.gridRow = row + 1;
+                    wrap.style.gridColumn = (Number(colKey) + 1);
+                    const circle = document.createElement('div');
+                    circle.className = 'ire-circle ' + (cell.r === 'B' ? 'banker' : 'player');
+                    if (cell.l6) circle.classList.add('l6');
+                    wrap.appendChild(circle);
+                    if (cell.tie > 0) {
+                        const tieLine = document.createElement('div');
+                        tieLine.className = 'ire-tie-line';
+                        wrap.appendChild(tieLine);
+                        if (cell.tie > 1) {
+                            const cnt = document.createElement('div');
+                            cnt.className = 'ire-tie-count';
+                            cnt.textContent = cell.tie;
+                            wrap.appendChild(cnt);
+                        }
+                    }
+                    board.appendChild(wrap);
+                }
+            }
+            const boardWrap = container.querySelector('.ire-board-wrap');
+            if (boardWrap) boardWrap.scrollLeft = boardWrap.scrollWidth;
+        }
+
+        function handleAction(act) {
+            if (act === 'undo') {
+                items.pop();
+            } else if (act === 'clear') {
+                items.length = 0;
+            } else if (['B', 'P', 'T', 'B6'].includes(act)) {
+                if (items.length >= HARD_MAX_ROUNDS) {
+                    if (typeof log === 'function') log(`已達硬上限 ${HARD_MAX_ROUNDS} 局`, 'warn');
+                    return;
+                }
+                items.push(act);
+            }
+            savedItems = items.slice();
+            render();
+        }
+
+        container.querySelectorAll('.ire-toolbar .rid-btn').forEach(btn => {
+            btn.addEventListener('click', () => handleAction(btn.dataset.act));
+        });
+
+        const keyHandler = (e) => {
+            if (!container.isConnected || container.dataset.mode !== 'edit') {
+                document.removeEventListener('keydown', keyHandler);
+                return;
+            }
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            switch (e.key) {
+                case '1': case 'b': case 'B': handleAction('B'); e.preventDefault(); break;
+                case '2': case 'p': case 'P': handleAction('P'); e.preventDefault(); break;
+                case '3': case 't': case 'T': handleAction('T'); e.preventDefault(); break;
+                case '6': handleAction('B6'); e.preventDefault(); break;
+                case 'Backspace': handleAction('undo'); e.preventDefault(); break;
+            }
+        };
+        document.addEventListener('keydown', keyHandler);
+
+        let generateCount = 0;
+        applyBtn.addEventListener('click', () => {
+            if (items.length === 0) return;
+            applyBtn.disabled = true;
+            applyBtn.textContent = '生成中...';
+            setTimeout(() => {
+                try {
+                    const rounds = generateShoeByItemList(items);
+                    currentRounds = rounds;
+                    window.__importedShoeMode = true;
+                    window.__regenerateCount = 0;
+                    const logArea = document.getElementById('logArea');
+                    if (logArea) logArea.innerHTML = '';
+                    const roundsBody = document.getElementById('roundsBody');
+                    if (roundsBody) roundsBody.innerHTML = '';
+                    if (typeof refreshAnalysisAndRender === 'function') {
+                        refreshAnalysisAndRender({ mutate: false, skipVerify: true });
+                    }
+                    if (typeof setEditButtonsAvailability === 'function') setEditButtonsAvailability(true);
+                    if (typeof resetEditState === 'function') resetEditState();
+                    if (typeof analyzeShoeRecovery === 'function' && typeof updateRecoveryDisplay === 'function') {
+                        try { const rr = analyzeShoeRecovery(currentRounds); if (rr) updateRecoveryDisplay(rr); } catch (_) {}
+                    }
+                    generateCount++;
+                    if (typeof log === 'function') log(`✅ 路單編輯生成第 ${generateCount} 條:${rounds.length} 局`, 'success');
+                    applyBtn.disabled = false;
+                    applyBtn.textContent = `套用生成 (#${generateCount + 1})`;
+                    // brief success flash
+                    const oldText = elBudget.textContent;
+                    const oldCls = elBudget.className;
+                    elBudget.style.background = '#d8f5d8';
+                    elBudget.style.color = '#1d5d3a';
+                    elBudget.textContent = `✓ 第 ${generateCount} 條已生成`;
+                    setTimeout(() => {
+                        elBudget.style.background = '';
+                        elBudget.style.color = '';
+                        elBudget.className = oldCls;
+                        elBudget.textContent = oldText;
+                    }, 2500);
+                } catch (err) {
+                    applyBtn.disabled = false;
+                    applyBtn.textContent = '套用生成';
+                    alert('生成失敗:' + (err && err.message ? err.message : err));
+                }
+            }, 30);
+        });
+
+        render();
+    }
+
     window.showRoadInputDialog = showRoadInputDialog;
+    window.renderInlineRoadEdit = renderInlineRoadEdit;
 })();
