@@ -446,6 +446,48 @@ input { font: inherit; color: inherit; }
   color: var(--ink);
 }
 
+/* === Card 4 卡色 === */
+.cardback-pattern-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+.cardback-pattern {
+  display: flex;
+  gap: 4px;
+  padding: 6px 8px;
+  background: var(--bg-paper);
+  border: 1.5px solid var(--ink);
+  border-radius: 4px;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.08s, box-shadow 0.08s;
+}
+.cardback-pattern:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 1px 1px 0 var(--ink);
+}
+.cardback-pattern[data-on="true"] {
+  background: var(--accent);
+  box-shadow: inset 1px 1px 0 rgba(0,0,0,0.2);
+}
+.cb-mini {
+  width: 12px;
+  height: 18px;
+  border-radius: 2px;
+  border: 1px solid var(--ink);
+  display: inline-block;
+}
+.cb-mini.cb-red { background: #d94c3a; }
+.cb-mini.cb-blue { background: #1c3a8c; }
+.cardback-hint {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  margin-top: 6px;
+  letter-spacing: 0.05em;
+}
+
 /* === Settings inputs === */
 .field-grid {
   display: grid;
@@ -1757,6 +1799,45 @@ td.swap-banker-six-result { color: var(--duizhuang) !important; font-weight: 900
                     </div>
                 </div>
             </section>
+
+            <!-- Card 4：卡色 -->
+            <section class="card settings-card">
+                <header class="card-head">
+                    <span class="card-num">4</span>
+                    <h2 class="card-title">卡色</h2>
+                    <span class="card-spacer"></span>
+                    <span class="card-meta">CARD COLOR</span>
+                </header>
+                <div class="card-body">
+                    <div class="cardback-pattern-row" id="cardbackPatternRow">
+                        <a class="cardback-pattern" href="javascript:void(0)" data-pattern="BBBR" title="BBBR">
+                            <span class="cb-mini cb-blue"></span>
+                            <span class="cb-mini cb-blue"></span>
+                            <span class="cb-mini cb-blue"></span>
+                            <span class="cb-mini cb-red"></span>
+                        </a>
+                        <a class="cardback-pattern" href="javascript:void(0)" data-pattern="RRRB" title="RRRB">
+                            <span class="cb-mini cb-red"></span>
+                            <span class="cb-mini cb-red"></span>
+                            <span class="cb-mini cb-red"></span>
+                            <span class="cb-mini cb-blue"></span>
+                        </a>
+                        <a class="cardback-pattern" href="javascript:void(0)" data-pattern="BBRR" title="BBRR">
+                            <span class="cb-mini cb-blue"></span>
+                            <span class="cb-mini cb-blue"></span>
+                            <span class="cb-mini cb-red"></span>
+                            <span class="cb-mini cb-red"></span>
+                        </a>
+                        <a class="cardback-pattern" href="javascript:void(0)" data-pattern="RRBB" title="RRBB">
+                            <span class="cb-mini cb-red"></span>
+                            <span class="cb-mini cb-red"></span>
+                            <span class="cb-mini cb-blue"></span>
+                            <span class="cb-mini cb-blue"></span>
+                        </a>
+                    </div>
+                    <div class="cardback-hint" id="cardbackHint">未選表示隨機</div>
+                </div>
+            </section>
         </aside>
 
         <!-- =================== CENTER WORKSPACE =================== -->
@@ -2064,6 +2145,52 @@ td.swap-banker-six-result { color: var(--duizhuang) !important; font-weight: 900
                     if (typeof persistCardColorMixedMode === 'function') persistCardColorMixedMode(mixedToggle.checked);
                     if (typeof log === 'function') log(mixedToggle.checked ? '卡色模式：混和' : '卡色模式：標準', 'info');
                 });
+            }
+
+            // Card 4：卡色 pattern 多選
+            const cardbackRow = document.getElementById('cardbackPatternRow');
+            const cardbackHint = document.getElementById('cardbackHint');
+            if (cardbackRow) {
+                let initial = [];
+                try {
+                    const raw = localStorage.getItem('card_color_patterns_selected');
+                    if (raw) {
+                        const parsed = JSON.parse(raw);
+                        if (Array.isArray(parsed)) initial = parsed;
+                    }
+                } catch(e) { initial = []; }
+                const validSet = new Set(['BBBR','RRRB','BBRR','RRBB']);
+                const initialSet = new Set(initial.filter(p => validSet.has(p)));
+
+                const syncHint = () => {
+                    const selected = Array.from(cardbackRow.querySelectorAll('.cardback-pattern[data-on="true"]')).map(a => a.dataset.pattern);
+                    if (cardbackHint) {
+                        cardbackHint.textContent = selected.length === 0
+                            ? '未選表示隨機'
+                            : '已選：' + selected.join(' / ');
+                    }
+                };
+
+                cardbackRow.querySelectorAll('.cardback-pattern').forEach(el => {
+                    const p = el.dataset.pattern;
+                    el.setAttribute('data-on', initialSet.has(p) ? 'true' : 'false');
+                    el.addEventListener('click', (ev) => {
+                        ev.preventDefault();
+                        const on = el.getAttribute('data-on') === 'true';
+                        el.setAttribute('data-on', on ? 'false' : 'true');
+                        const selected = Array.from(cardbackRow.querySelectorAll('.cardback-pattern[data-on="true"]')).map(a => a.dataset.pattern);
+                        if (typeof persistCardColorPatternsSelected === 'function') {
+                            persistCardColorPatternsSelected(selected);
+                        }
+                        syncHint();
+                        if (typeof log === 'function') {
+                            log(selected.length === 0
+                                ? '卡色 pattern：隨機'
+                                : '卡色 pattern：' + selected.join(' / '), 'info');
+                        }
+                    });
+                });
+                syncHint();
             }
 
             const violationToggle = document.getElementById('violationStatsToggle');

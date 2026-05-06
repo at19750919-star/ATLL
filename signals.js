@@ -234,6 +234,8 @@ const ENABLE_PREFLIGHT_REGENERATE = false;
 
 const SIGNAL_STORAGE_KEY = 'signal_config';
 const CARD_COLOR_MIXED_STORAGE_KEY = 'card_color_mixed_mode';
+const CARD_COLOR_PATTERNS_STORAGE_KEY = 'card_color_patterns_selected';
+const VALID_CARD_COLOR_PATTERNS = ['BBBR', 'RRRB', 'BBRR', 'RRBB'];
 const VALID_SUITS = ['♠', '♥', '♦', '♣'];
 const VALID_RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 const SIGNAL_DEFAULT_CONFIG = { suits: ['♠','♥','♦','♣'], ranks: ['A','2'] };
@@ -266,13 +268,55 @@ function persistCardColorMixedMode(enabled) {
     return CARD_COLOR_MIXED_MODE;
 }
 
+function loadCardColorPatternsSelected() {
+    if (typeof window === 'undefined' || !window.localStorage) return [];
+    try {
+        const v = window.localStorage.getItem(CARD_COLOR_PATTERNS_STORAGE_KEY);
+        if (!v) return [];
+        const parsed = JSON.parse(v);
+        if (!Array.isArray(parsed)) return [];
+        return parsed.filter(p => VALID_CARD_COLOR_PATTERNS.includes(p));
+    } catch (e) {
+        return [];
+    }
+}
+
+let CARD_COLOR_PATTERNS_SELECTED = loadCardColorPatternsSelected();
+
+function persistCardColorPatternsSelected(list) {
+    const sanitized = Array.isArray(list)
+        ? list.filter(p => VALID_CARD_COLOR_PATTERNS.includes(p))
+        : [];
+    CARD_COLOR_PATTERNS_SELECTED = sanitized;
+    if (typeof window !== 'undefined') {
+        window.__cardColorPatternsSelected = CARD_COLOR_PATTERNS_SELECTED.slice();
+        try {
+            if (window.localStorage) {
+                window.localStorage.setItem(
+                    CARD_COLOR_PATTERNS_STORAGE_KEY,
+                    JSON.stringify(CARD_COLOR_PATTERNS_SELECTED)
+                );
+            }
+        } catch (e) {
+            console.warn('Failed to persist card color patterns:', e);
+        }
+    }
+    return CARD_COLOR_PATTERNS_SELECTED.slice();
+}
+
 function getCardColorPatterns() {
+    if (CARD_COLOR_PATTERNS_SELECTED && CARD_COLOR_PATTERNS_SELECTED.length > 0) {
+        return CARD_COLOR_PATTERNS_SELECTED.map(s => s.split(''));
+    }
     const base = [['B', 'B', 'B', 'R'], ['R', 'R', 'R', 'B']];
     if (!CARD_COLOR_MIXED_MODE) return base;
     return base.concat([['B', 'B', 'R', 'R'], ['R', 'R', 'B', 'B']]);
 }
 
 function getValidCardColorStrings() {
+    if (CARD_COLOR_PATTERNS_SELECTED && CARD_COLOR_PATTERNS_SELECTED.length > 0) {
+        return new Set(CARD_COLOR_PATTERNS_SELECTED);
+    }
     return CARD_COLOR_MIXED_MODE
         ? new Set(['BBBR', 'RRRB', 'BBRR', 'RRBB'])
         : new Set(['BBBR', 'RRRB']);
